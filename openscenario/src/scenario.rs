@@ -142,15 +142,15 @@ impl Scenario {
         let story_name = story.into();
         let act_name = name.into();
         
-        // Check if story exists first
-        if !self.storyboard.stories.contains_key(&story_name) {
-            return Err(ScenarioError::StoryNotFound {
-                name: story_name.clone(),
-                available: self.storyboard.stories.keys().cloned().collect(),
-            });
-        }
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
         
-        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        // Then use ok_or_else with the pre-collected keys
+        let story = self.storyboard.stories.get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
         story.acts.insert(act_name.clone(), Act::new(act_name));
         Ok(())
     }
@@ -165,15 +165,15 @@ impl Scenario {
         let act_name = act.into();
         let mg_name = name.into();
         
-        // Check if story exists first
-        if !self.storyboard.stories.contains_key(&story_name) {
-            return Err(ScenarioError::StoryNotFound {
-                name: story_name.clone(),
-                available: self.storyboard.stories.keys().cloned().collect(),
-            });
-        }
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
         
-        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        // Then use ok_or_else with the pre-collected keys
+        let story = self.storyboard.stories.get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
         
         let act = story.acts.get_mut(&act_name)
             .ok_or_else(|| ScenarioError::EntityNotFound {
@@ -205,15 +205,15 @@ impl Scenario {
             });
         }
         
-        // Check if story exists first
-        if !self.storyboard.stories.contains_key(&story_name) {
-            return Err(ScenarioError::StoryNotFound {
-                name: story_name.clone(),
-                available: self.storyboard.stories.keys().cloned().collect(),
-            });
-        }
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
         
-        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        // Then use ok_or_else with the pre-collected keys
+        let story = self.storyboard.stories.get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
         
         let act = story.acts.get_mut(&act_name)
             .ok_or_else(|| ScenarioError::EntityNotFound {
@@ -243,15 +243,15 @@ impl Scenario {
         let mg_name = mg.into();
         let maneuver_name = name.into();
         
-        // Check if story exists first
-        if !self.storyboard.stories.contains_key(&story_name) {
-            return Err(ScenarioError::StoryNotFound {
-                name: story_name.clone(),
-                available: self.storyboard.stories.keys().cloned().collect(),
-            });
-        }
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
         
-        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        // Then use ok_or_else with the pre-collected keys
+        let story = self.storyboard.stories.get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
         
         let act = story.acts.get_mut(&act_name)
             .ok_or_else(|| ScenarioError::EntityNotFound {
@@ -286,15 +286,15 @@ impl Scenario {
         let maneuver_name = maneuver.into();
         let event_name = event.into();
         
-        // Check if story exists first
-        if !self.storyboard.stories.contains_key(&story_name) {
-            return Err(ScenarioError::StoryNotFound {
-                name: story_name.clone(),
-                available: self.storyboard.stories.keys().cloned().collect(),
-            });
-        }
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
         
-        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        // Then use ok_or_else with the pre-collected keys
+        let story = self.storyboard.stories.get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
         
         let act = story.acts.get_mut(&act_name)
             .ok_or_else(|| ScenarioError::EntityNotFound {
@@ -351,15 +351,15 @@ impl Scenario {
         let maneuver_name = maneuver.into();
         let event_name = event.into();
         
-        // Check if story exists first
-        if !self.storyboard.stories.contains_key(&story_name) {
-            return Err(ScenarioError::StoryNotFound {
-                name: story_name.clone(),
-                available: self.storyboard.stories.keys().cloned().collect(),
-            });
-        }
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
         
-        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        // Then use ok_or_else with the pre-collected keys
+        let story = self.storyboard.stories.get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
         
         let act = story.acts.get_mut(&act_name)
             .ok_or_else(|| ScenarioError::EntityNotFound {
