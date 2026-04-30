@@ -5,10 +5,10 @@ use crate::Position;
 use crate::storyboard::{Storyboard, Story, Act, ManeuverGroup, Maneuver, Event, Action, SpeedAction, LaneChangeAction, TransitionShape};
 
 pub struct Scenario {
-    version: OpenScenarioVersion,
-    entities: HashMap<String, Entity>,
-    initial_positions: HashMap<String, Position>,
-    storyboard: Storyboard,
+    pub(crate) version: OpenScenarioVersion,
+    pub(crate) entities: HashMap<String, Entity>,
+    pub(crate) initial_positions: HashMap<String, Position>,
+    pub(crate) storyboard: Storyboard,
 }
 
 impl Scenario {

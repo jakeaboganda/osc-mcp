@@ -6,6 +6,7 @@ pub mod position;
 pub mod scenario;
 pub mod storyboard;
 pub mod version;
+pub mod xml;
 
 pub use entities::{Entity, VehicleParams, PedestrianParams, MiscObjectParams};
 pub use error::{ScenarioError, Result};
