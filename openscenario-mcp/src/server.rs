@@ -1,6 +1,5 @@
-use mcp_sdk::server::Server;
 use mcp_sdk::types::{
-    CallToolRequest, CallToolResponse, ListRequest, ServerCapabilities,
+    CallToolRequest, CallToolResponse, ListRequest,
     ToolDefinition, ToolResponseContent, ToolsListResponse,
 };
 use serde_json::json;
