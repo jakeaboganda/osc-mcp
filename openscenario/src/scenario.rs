@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use crate::{Result, ScenarioError, OpenScenarioVersion};
 use crate::entities::{Entity, Vehicle, VehicleParams, Pedestrian, PedestrianParams, MiscObject, MiscObjectParams};
 use crate::Position;
+use crate::storyboard::{Storyboard, Story, Act, ManeuverGroup};
 
 pub struct Scenario {
     version: OpenScenarioVersion,
     entities: HashMap<String, Entity>,
     initial_positions: HashMap<String, Position>,
+    storyboard: Storyboard,
 }
 
 impl Scenario {
@@ -15,6 +17,7 @@ impl Scenario {
             version,
             entities: HashMap::new(),
             initial_positions: HashMap::new(),
+            storyboard: Storyboard::new(),
         }
     }
     
@@ -118,6 +121,113 @@ impl Scenario {
         }
         
         self.initial_positions.insert(entity, position);
+        Ok(())
+    }
+    
+    pub fn add_story(&mut self, name: impl Into<String>) -> Result<()> {
+        let name = name.into();
+        
+        if self.storyboard.stories.contains_key(&name) {
+            return Err(ScenarioError::StoryNotFound {
+                name: name.clone(),
+                available: self.storyboard.stories.keys().cloned().collect(),
+            });
+        }
+        
+        self.storyboard.stories.insert(name.clone(), Story::new(name));
+        Ok(())
+    }
+    
+    pub fn add_act(&mut self, story: impl Into<String>, name: impl Into<String>) -> Result<()> {
+        let story_name = story.into();
+        let act_name = name.into();
+        
+        // Check if story exists first
+        if !self.storyboard.stories.contains_key(&story_name) {
+            return Err(ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: self.storyboard.stories.keys().cloned().collect(),
+            });
+        }
+        
+        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        story.acts.insert(act_name.clone(), Act::new(act_name));
+        Ok(())
+    }
+    
+    pub fn add_maneuver_group(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        name: impl Into<String>,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = name.into();
+        
+        // Check if story exists first
+        if !self.storyboard.stories.contains_key(&story_name) {
+            return Err(ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: self.storyboard.stories.keys().cloned().collect(),
+            });
+        }
+        
+        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        
+        let act = story.acts.get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+        
+        act.maneuver_groups.insert(mg_name.clone(), ManeuverGroup::new(mg_name));
+        Ok(())
+    }
+    
+    pub fn add_actor(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        entity: impl Into<String>,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let entity_name = entity.into();
+        
+        // Validate entity exists
+        if !self.entities.contains_key(&entity_name) {
+            return Err(ScenarioError::EntityNotFound {
+                entity: entity_name,
+                context: "add_actor".to_string(),
+            });
+        }
+        
+        // Check if story exists first
+        if !self.storyboard.stories.contains_key(&story_name) {
+            return Err(ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: self.storyboard.stories.keys().cloned().collect(),
+            });
+        }
+        
+        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        
+        let act = story.acts.get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+        
+        let mg = act.maneuver_groups.get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+        
+        mg.actors.push(entity_name);
         Ok(())
     }
 }
