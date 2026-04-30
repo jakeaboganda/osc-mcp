@@ -11,5 +11,5 @@ pub use entities::{Entity, VehicleParams, PedestrianParams, MiscObjectParams};
 pub use error::{ScenarioError, Result};
 pub use position::Position;
 pub use scenario::Scenario;
-pub use storyboard::{Storyboard, TransitionShape};
+pub use storyboard::{Storyboard, TransitionShape, Action, SpeedAction, LaneChangeAction};
 pub use version::OpenScenarioVersion;

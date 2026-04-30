@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::{Result, ScenarioError, OpenScenarioVersion};
 use crate::entities::{Entity, Vehicle, VehicleParams, Pedestrian, PedestrianParams, MiscObject, MiscObjectParams};
 use crate::Position;
-use crate::storyboard::{Storyboard, Story, Act, ManeuverGroup};
+use crate::storyboard::{Storyboard, Story, Act, ManeuverGroup, Maneuver, Event, Action, SpeedAction, LaneChangeAction, TransitionShape};
 
 pub struct Scenario {
     version: OpenScenarioVersion,
@@ -228,6 +228,174 @@ impl Scenario {
             })?;
         
         mg.actors.push(entity_name);
+        Ok(())
+    }
+    
+    pub fn add_maneuver(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        name: impl Into<String>,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = name.into();
+        
+        // Check if story exists first
+        if !self.storyboard.stories.contains_key(&story_name) {
+            return Err(ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: self.storyboard.stories.keys().cloned().collect(),
+            });
+        }
+        
+        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        
+        let act = story.acts.get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+        
+        let mg = act.maneuver_groups.get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+        
+        mg.maneuvers.push(Maneuver::new(maneuver_name));
+        Ok(())
+    }
+    
+    pub fn add_speed_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        target_speed: f64,
+        duration: f64,
+        shape: TransitionShape,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+        
+        // Check if story exists first
+        if !self.storyboard.stories.contains_key(&story_name) {
+            return Err(ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: self.storyboard.stories.keys().cloned().collect(),
+            });
+        }
+        
+        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        
+        let act = story.acts.get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+        
+        let mg = act.maneuver_groups.get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+        
+        let maneuver = mg.maneuvers.iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+        
+        let action = Action::Speed(SpeedAction {
+            target_speed,
+            transition_duration: duration,
+            shape,
+        });
+        
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+            });
+        }
+        
+        Ok(())
+    }
+    
+    pub fn add_lane_change_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        target_lane_offset: f64,
+        duration: f64,
+        shape: TransitionShape,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+        
+        // Check if story exists first
+        if !self.storyboard.stories.contains_key(&story_name) {
+            return Err(ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: self.storyboard.stories.keys().cloned().collect(),
+            });
+        }
+        
+        let story = self.storyboard.stories.get_mut(&story_name).unwrap();
+        
+        let act = story.acts.get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+        
+        let mg = act.maneuver_groups.get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+        
+        let maneuver = mg.maneuvers.iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+        
+        let action = Action::LaneChange(LaneChangeAction {
+            target_lane_offset,
+            transition_duration: duration,
+            shape,
+        });
+        
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+            });
+        }
+        
         Ok(())
     }
 }
