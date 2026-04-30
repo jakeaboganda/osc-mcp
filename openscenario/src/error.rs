@@ -7,6 +7,7 @@ pub type Result<T> = std::result::Result<T, ScenarioError>;
 
 /// Errors that can occur during scenario operations
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum ScenarioError {
     #[error("Not implemented yet")]
     NotImplemented,
