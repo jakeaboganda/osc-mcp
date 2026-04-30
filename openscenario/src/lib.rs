@@ -1,3 +1,9 @@
 //! OpenSCENARIO library for scenario generation and validation
 
-// Core library stub - implementation will be added in feature branch
+pub mod error;
+pub mod scenario;
+pub mod version;
+
+pub use error::{ScenarioError, Result};
+pub use scenario::Scenario;
+pub use version::OpenScenarioVersion;
