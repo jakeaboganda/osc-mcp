@@ -52,6 +52,9 @@ pub enum ScenarioError {
         entry: String,
     },
     
+    #[error("Invalid catalog: {0}")]
+    InvalidCatalog(String),
+    
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
     
