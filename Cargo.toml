@@ -1,5 +1,5 @@
 [workspace]
-members = ["openscenario", "openscenario-mcp"]
+members = ["openscenario"]
 resolver = "2"
 
 [workspace.package]

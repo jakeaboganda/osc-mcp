@@ -1,3 +1,16 @@
 //! OpenSCENARIO library for scenario generation and validation
 
-// Core library stub - implementation will be added in feature branch
+pub mod entities;
+pub mod error;
+pub mod position;
+pub mod scenario;
+pub mod storyboard;
+pub mod version;
+pub mod xml;
+
+pub use entities::{Entity, VehicleParams, PedestrianParams, MiscObjectParams};
+pub use error::{ScenarioError, Result};
+pub use position::Position;
+pub use scenario::Scenario;
+pub use storyboard::{Storyboard, TransitionShape, Action, SpeedAction, LaneChangeAction};
+pub use version::OpenScenarioVersion;
