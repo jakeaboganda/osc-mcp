@@ -80,6 +80,22 @@ impl Scenario {
         Ok(())
     }
     
+    pub fn get_entity(&self, name: &str) -> Option<&Entity> {
+        self.entities.get(name)
+    }
+    
+    pub fn entities(&self) -> impl Iterator<Item = &Entity> {
+        self.entities.values()
+    }
+    
+    pub fn get_initial_position(&self, entity: &str) -> Option<&Position> {
+        self.initial_positions.get(entity)
+    }
+    
+    pub fn initial_positions(&self) -> impl Iterator<Item = (&String, &Position)> {
+        self.initial_positions.iter()
+    }
+    
     pub fn set_initial_position(&mut self, entity: impl Into<String>, position: Position) -> Result<()> {
         let entity = entity.into();
         
