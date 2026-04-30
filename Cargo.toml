@@ -1,0 +1,10 @@
+[workspace]
+members = ["openscenario", "openscenario-mcp"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Jake <jeremiah.aboganda@gmail.com>"]
+repository = "https://github.com/jakeaboganda/osc-mcp"

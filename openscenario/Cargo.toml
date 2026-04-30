@@ -1,0 +1,16 @@
+[package]
+name = "openscenario"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Rust library for generating and validating ASAM OpenSCENARIO scenarios"
+
+[dependencies]
+thiserror = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+quick-xml = { version = "0.36", features = ["serialize"] }
+opendrive = "0.1"
+
+[dev-dependencies]
