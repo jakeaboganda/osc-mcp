@@ -38,7 +38,11 @@ impl Scenario {
         writer.write_event(XmlEvent::End(BytesEnd::new("OpenSCENARIO")))?;
         
         let result = writer.into_inner().into_inner();
-        Ok(String::from_utf8(result).unwrap())
+        String::from_utf8(result)
+            .map_err(|e| ScenarioError::Xml(quick_xml::Error::Io(std::sync::Arc::new(
+                std::io::Error::new(std::io::ErrorKind::InvalidData, 
+                    format!("Invalid UTF-8 in generated XML: {}", e))
+            ))))
     }
     
     fn write_file_header<W: std::io::Write>(&self, writer: &mut Writer<W>) -> Result<()> {

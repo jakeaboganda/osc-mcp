@@ -150,6 +150,7 @@ impl Scenario {
             });
         }
         
+        // SAFETY: unwrap is safe here because we just checked contains_key above
         let story = self.storyboard.stories.get_mut(&story_name).unwrap();
         story.acts.insert(act_name.clone(), Act::new(act_name));
         Ok(())
