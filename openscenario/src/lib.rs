@@ -3,6 +3,7 @@
 pub mod catalog;
 pub mod entities;
 pub mod error;
+pub mod opendrive_validator;
 pub mod position;
 pub mod scenario;
 pub mod storyboard;
