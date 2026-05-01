@@ -386,6 +386,27 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("LaneChangeAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LateralAction")))?;
             }
+            Action::Position(position_action) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("TeleportAction")))?;
+                self.write_position(writer, &position_action.position)?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("TeleportAction")))?;
+            }
+            Action::Distance(distance_action) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalAction")))?;
+                writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalDistanceAction")))?;
+                
+                let mut entity_elem = BytesStart::new("EntityRef");
+                entity_elem.push_attribute(("entityRef", distance_action.entity_ref.as_str()));
+                writer.write_event(XmlEvent::Empty(entity_elem))?;
+                
+                let mut dist_elem = BytesStart::new("Distance");
+                dist_elem.push_attribute(("value", distance_action.distance.to_string().as_str()));
+                dist_elem.push_attribute(("freespace", distance_action.freespace.to_string().as_str()));
+                writer.write_event(XmlEvent::Empty(dist_elem))?;
+                
+                writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalDistanceAction")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
+            }
         }
         
         writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;

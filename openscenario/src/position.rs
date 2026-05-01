@@ -13,7 +13,7 @@ impl Default for Orientation {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Position {
     World {
         x: f64,

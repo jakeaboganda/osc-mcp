@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
+use crate::Position;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Story {
@@ -73,6 +74,8 @@ pub struct Event {
 pub enum Action {
     Speed(SpeedAction),
     LaneChange(LaneChangeAction),
+    Position(PositionAction),
+    Distance(DistanceAction),
     // More actions to be added
 }
 
@@ -88,6 +91,18 @@ pub struct LaneChangeAction {
     pub target_lane_offset: f64,
     pub transition_duration: f64,
     pub shape: TransitionShape,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PositionAction {
+    pub position: Position,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DistanceAction {
+    pub entity_ref: String,
+    pub distance: f64,
+    pub freespace: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
