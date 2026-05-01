@@ -6,6 +6,7 @@ pub mod error;
 pub mod position;
 pub mod scenario;
 pub mod storyboard;
+pub mod validation;
 pub mod version;
 pub mod xml;
 
@@ -15,4 +16,5 @@ pub use error::{ScenarioError, Result};
 pub use position::Position;
 pub use scenario::Scenario;
 pub use storyboard::{Storyboard, TransitionShape, Action, SpeedAction, LaneChangeAction};
+pub use validation::{ValidationReport, XsdValidator};
 pub use version::OpenScenarioVersion;
