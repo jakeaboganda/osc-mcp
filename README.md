@@ -17,6 +17,19 @@ Rust library and MCP server for generating and validating OpenSCENARIO test scen
 - **Fail-fast validation**: Immediate feedback on entity conflicts and missing references
 - **MCP server**: Model Context Protocol server for AI agent integration
 
+### Phase 2 (v2.0) ✅
+
+- **Catalog loading**: Read and reference external XOSC vehicle/pedestrian/controller catalogs
+- **XSD validation**: Validate scenarios against OpenSCENARIO 1.0/1.1/1.2 XSD schemas
+- **7 MCP tools** for AI-driven scenario generation:
+  - `create_scenario` - Create new OpenSCENARIO scenarios (versions 1.0, 1.1, 1.2)
+  - `add_vehicle` - Add vehicles with catalog support
+  - `set_position` - Set entity world positions
+  - `add_speed_action` - Add speed change actions to stories
+  - `add_lane_change_action` - Add lane change actions to stories
+  - `export_xml` - Export scenarios to valid .xosc files
+  - `validate_scenario` - Validate against XSD schemas
+
 ## Project Structure
 
 ```
@@ -104,12 +117,77 @@ std::fs::write("scenario.xosc", xml)?;
 
 ### MCP Server
 
+The MCP server provides 7 tools for AI-driven scenario generation:
+
 ```bash
 # Start the MCP server
 cargo run --release --bin openscenario-mcp
 ```
 
+**Available Tools:**
+
+1. **create_scenario** - Create a new scenario
+   ```json
+   {"name": "highway_scenario", "version": "1.2"}
+   ```
+
+2. **add_vehicle** - Add a vehicle (with optional catalog)
+   ```json
+   {
+     "scenario_id": "scenario_abc123",
+     "name": "ego",
+     "category": "Car",
+     "catalog": "VehicleCatalog.xosc:vehicle.car.bmw.3_series"
+   }
+   ```
+
+3. **set_position** - Set entity initial position
+   ```json
+   {
+     "scenario_id": "scenario_abc123",
+     "entity_name": "ego",
+     "x": 0.0, "y": 0.0, "z": 0.0, "h": 0.0
+   }
+   ```
+
+4. **add_speed_action** - Add speed change action
+   ```json
+   {
+     "scenario_id": "scenario_abc123",
+     "entity_name": "ego",
+     "story_name": "main_story",
+     "speed": 50.0,
+     "duration": 5.0
+   }
+   ```
+
+5. **add_lane_change_action** - Add lane change action
+   ```json
+   {
+     "scenario_id": "scenario_abc123",
+     "entity_name": "ego",
+     "story_name": "main_story",
+     "target_lane": 3.5,
+     "duration": 4.0
+   }
+   ```
+
+6. **export_xml** - Export to .xosc file
+   ```json
+   {
+     "scenario_id": "scenario_abc123",
+     "output_path": "output/scenario.xosc"
+   }
+   ```
+
+7. **validate_scenario** - Validate against XSD
+   ```json
+   {"scenario_id": "scenario_abc123"}
+   ```
+
 The server communicates via JSON-RPC over stdio, compatible with AI agents and OpenClaw.
+
+See [openscenario-mcp/README.md](openscenario-mcp/README.md) for detailed MCP setup instructions.
 
 ## Testing
 
@@ -136,19 +214,19 @@ Test coverage: **32 tests** across 9 test files, covering:
 
 ## Roadmap
 
-### Phase 2 (Next)
-- Catalog loading (read-only)
-- OpenDRIVE integration for road validation
-- XSD validation
-- More actions (Position, Distance, etc.)
-- MCP tool implementations
+### Phase 3 (Next)
+- OpenDRIVE integration for road/lane validation
+- More actions (Position, Distance, Teleport, etc.)
+- Pedestrian/MiscObject-specific actions
+- Conditions and triggers (value, entity, storyboard)
+- Parameters and variable references
 
-### Phase 3+
-- Pedestrian/MiscObject actions
-- Conditions and triggers
-- Parameters and value references
-- Catalog creation
-- Advanced OpenDRIVE features
+### Phase 4+
+- Catalog creation and modification
+- ParameterDeclaration support
+- Advanced OpenDRIVE features (junctions, signals)
+- Scenario visualization
+- Performance optimizations
 
 ## Contributing
 
