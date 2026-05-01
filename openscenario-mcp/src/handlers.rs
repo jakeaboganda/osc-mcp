@@ -3,10 +3,12 @@ use openscenario::{Scenario, OpenScenarioVersion};
 use openscenario::entities::{VehicleCategory, VehicleParams, CatalogReference};
 use openscenario::Position;
 use openscenario::storyboard::TransitionShape;
+use openscenario::validation::XsdValidator;
 use std::sync::{Arc, Mutex};
 use std::fs;
 use anyhow::{Result, anyhow};
 use uuid::Uuid;
+use serde_json::json;
 
 /// Create a new OpenSCENARIO scenario
 pub fn handle_create_scenario(
@@ -212,4 +214,32 @@ pub fn handle_export_xml(
         .map_err(|e| anyhow!("Failed to write XML file: {}", e))?;
     
     Ok(format!("Exported scenario to: {}", output_path))
+}
+
+/// Validate a scenario using XSD validation
+pub fn handle_validate_scenario(
+    state: Arc<Mutex<ServerState>>,
+    scenario_id: String,
+) -> Result<String> {
+    let state_lock = state.lock().unwrap();
+    let scenario = state_lock.scenarios.get(&scenario_id)
+        .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
+    
+    // Generate XML
+    let xml_content = scenario.to_xml()?;
+    
+    // Get version string
+    let version_str = scenario.version().to_string();
+    
+    // Create validator and validate
+    let validator = XsdValidator::new(version_str);
+    let report = validator.validate(&xml_content);
+    
+    // Format as JSON report
+    let json_report = json!({
+        "valid": report.valid,
+        "errors": report.errors
+    });
+    
+    Ok(json_report.to_string())
 }

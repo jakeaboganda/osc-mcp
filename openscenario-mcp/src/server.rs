@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
 use openscenario::Scenario;
 use crate::handlers::{handle_create_scenario, handle_add_vehicle, handle_set_position,
-                      handle_add_speed_action, handle_add_lane_change_action, handle_export_xml};
+                      handle_add_speed_action, handle_add_lane_change_action, handle_export_xml, handle_validate_scenario};
 
 // Global server state
 static GLOBAL_STATE: Lazy<Arc<Mutex<ServerState>>> = Lazy::new(|| {
@@ -195,6 +195,20 @@ impl OpenScenarioServer {
                     "required": ["scenario_id", "output_path"]
                 }),
             },
+            ToolDefinition {
+                name: "validate_scenario".to_string(),
+                description: Some("Validate a scenario against OpenSCENARIO XSD schema".to_string()),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "scenario_id": {
+                            "type": "string",
+                            "description": "Scenario ID to validate"
+                        }
+                    },
+                    "required": ["scenario_id"]
+                }),
+            },
         ]
     }
     
@@ -378,6 +392,24 @@ impl OpenScenarioServer {
                     GLOBAL_STATE.clone(),
                     scenario_id.to_string(),
                     output_path.to_string(),
+                )?;
+                
+                Ok(CallToolResponse {
+                    content: vec![ToolResponseContent::Text {
+                        text: result,
+                    }],
+                    is_error: None,
+                    meta: None,
+                })
+            }
+            "validate_scenario" => {
+                let scenario_id = args.get("scenario_id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'scenario_id' parameter"))?;
+                
+                let result = handle_validate_scenario(
+                    GLOBAL_STATE.clone(),
+                    scenario_id.to_string(),
                 )?;
                 
                 Ok(CallToolResponse {
