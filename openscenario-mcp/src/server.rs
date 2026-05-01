@@ -8,7 +8,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
 use openscenario::Scenario;
-use crate::handlers::{handle_create_scenario, handle_add_vehicle, handle_set_position};
+use crate::handlers::{handle_create_scenario, handle_add_vehicle, handle_set_position,
+                      handle_add_speed_action, handle_add_lane_change_action, handle_export_xml};
 
 // Global server state
 static GLOBAL_STATE: Lazy<Arc<Mutex<ServerState>>> = Lazy::new(|| {
@@ -116,6 +117,84 @@ impl OpenScenarioServer {
                     "required": ["scenario_id", "entity_name", "x", "y", "z", "h"]
                 }),
             },
+            ToolDefinition {
+                name: "add_speed_action".to_string(),
+                description: Some("Add a speed action to a scenario".to_string()),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "scenario_id": {
+                            "type": "string",
+                            "description": "Scenario ID"
+                        },
+                        "entity_name": {
+                            "type": "string",
+                            "description": "Entity name to apply action to"
+                        },
+                        "story_name": {
+                            "type": "string",
+                            "description": "Story name (will be created if doesn't exist)"
+                        },
+                        "speed": {
+                            "type": "number",
+                            "description": "Target speed in m/s"
+                        },
+                        "duration": {
+                            "type": "number",
+                            "description": "Duration in seconds"
+                        }
+                    },
+                    "required": ["scenario_id", "entity_name", "story_name", "speed", "duration"]
+                }),
+            },
+            ToolDefinition {
+                name: "add_lane_change_action".to_string(),
+                description: Some("Add a lane change action to a scenario".to_string()),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "scenario_id": {
+                            "type": "string",
+                            "description": "Scenario ID"
+                        },
+                        "entity_name": {
+                            "type": "string",
+                            "description": "Entity name to apply action to"
+                        },
+                        "story_name": {
+                            "type": "string",
+                            "description": "Story name (will be created if doesn't exist)"
+                        },
+                        "target_lane": {
+                            "type": "number",
+                            "description": "Target lane offset in meters"
+                        },
+                        "duration": {
+                            "type": "number",
+                            "description": "Duration in seconds"
+                        }
+                    },
+                    "required": ["scenario_id", "entity_name", "story_name", "target_lane", "duration"]
+                }),
+            },
+            ToolDefinition {
+                name: "export_xml".to_string(),
+                description: Some("Export a scenario to an OpenSCENARIO XML file".to_string()),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "scenario_id": {
+                            "type": "string",
+                            "description": "Scenario ID"
+                        },
+                        "output_path": {
+                            "type": "string",
+                            "description": "Output file path (.xosc extension recommended)"
+                        }
+                    },
+                    "required": ["scenario_id", "output_path"]
+                }),
+            },
         ]
     }
     
@@ -209,6 +288,96 @@ impl OpenScenarioServer {
                     scenario_id.to_string(),
                     entity_name.to_string(),
                     x, y, z, h,
+                )?;
+                
+                Ok(CallToolResponse {
+                    content: vec![ToolResponseContent::Text {
+                        text: result,
+                    }],
+                    is_error: None,
+                    meta: None,
+                })
+            }
+            "add_speed_action" => {
+                let scenario_id = args.get("scenario_id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'scenario_id' parameter"))?;
+                let entity_name = args.get("entity_name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'entity_name' parameter"))?;
+                let story_name = args.get("story_name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'story_name' parameter"))?;
+                let speed = args.get("speed")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| anyhow!("Missing or invalid 'speed' parameter"))?;
+                let duration = args.get("duration")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| anyhow!("Missing or invalid 'duration' parameter"))?;
+                
+                let result = handle_add_speed_action(
+                    GLOBAL_STATE.clone(),
+                    scenario_id.to_string(),
+                    entity_name.to_string(),
+                    story_name.to_string(),
+                    speed,
+                    duration,
+                )?;
+                
+                Ok(CallToolResponse {
+                    content: vec![ToolResponseContent::Text {
+                        text: result,
+                    }],
+                    is_error: None,
+                    meta: None,
+                })
+            }
+            "add_lane_change_action" => {
+                let scenario_id = args.get("scenario_id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'scenario_id' parameter"))?;
+                let entity_name = args.get("entity_name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'entity_name' parameter"))?;
+                let story_name = args.get("story_name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'story_name' parameter"))?;
+                let target_lane = args.get("target_lane")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| anyhow!("Missing or invalid 'target_lane' parameter"))?;
+                let duration = args.get("duration")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| anyhow!("Missing or invalid 'duration' parameter"))?;
+                
+                let result = handle_add_lane_change_action(
+                    GLOBAL_STATE.clone(),
+                    scenario_id.to_string(),
+                    entity_name.to_string(),
+                    story_name.to_string(),
+                    target_lane,
+                    duration,
+                )?;
+                
+                Ok(CallToolResponse {
+                    content: vec![ToolResponseContent::Text {
+                        text: result,
+                    }],
+                    is_error: None,
+                    meta: None,
+                })
+            }
+            "export_xml" => {
+                let scenario_id = args.get("scenario_id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'scenario_id' parameter"))?;
+                let output_path = args.get("output_path")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'output_path' parameter"))?;
+                
+                let result = handle_export_xml(
+                    GLOBAL_STATE.clone(),
+                    scenario_id.to_string(),
+                    output_path.to_string(),
                 )?;
                 
                 Ok(CallToolResponse {

@@ -2,7 +2,9 @@ use crate::server::ServerState;
 use openscenario::{Scenario, OpenScenarioVersion};
 use openscenario::entities::{VehicleCategory, VehicleParams, CatalogReference};
 use openscenario::Position;
+use openscenario::storyboard::TransitionShape;
 use std::sync::{Arc, Mutex};
+use std::fs;
 use anyhow::{Result, anyhow};
 use uuid::Uuid;
 
@@ -106,4 +108,108 @@ pub fn handle_set_position(
     scenario.set_initial_position(entity_name.clone(), position)?;
     
     Ok(format!("Position set for entity: {}", entity_name))
+}
+
+/// Add a speed action to a scenario
+/// Creates default story structure if it doesn't exist: story -> act -> maneuver_group -> maneuver -> event
+pub fn handle_add_speed_action(
+    state: Arc<Mutex<ServerState>>,
+    scenario_id: String,
+    entity_name: String,
+    story_name: String,
+    speed: f64,
+    duration: f64,
+) -> Result<String> {
+    let mut state_lock = state.lock().unwrap();
+    let scenario = state_lock.scenarios.get_mut(&scenario_id)
+        .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
+    
+    // Ensure story structure exists
+    let act_name = format!("{}_act", story_name);
+    let mg_name = format!("{}_mg", entity_name);
+    let maneuver_name = format!("{}_maneuver", entity_name);
+    let event_name = "speed_event";
+    
+    // Try to create story structure (ignore errors if already exists)
+    let _ = scenario.add_story(&story_name);
+    let _ = scenario.add_act(&story_name, &act_name);
+    let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
+    let _ = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone());
+    let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
+    
+    // Add speed action
+    scenario.add_speed_action(
+        &story_name,
+        &act_name,
+        &mg_name,
+        &maneuver_name,
+        event_name,
+        speed,
+        duration,
+        TransitionShape::Linear,
+    )?;
+    
+    Ok(format!("Speed action added: {} m/s over {} seconds", speed, duration))
+}
+
+/// Add a lane change action to a scenario
+/// Creates default story structure if it doesn't exist: story -> act -> maneuver_group -> maneuver -> event
+pub fn handle_add_lane_change_action(
+    state: Arc<Mutex<ServerState>>,
+    scenario_id: String,
+    entity_name: String,
+    story_name: String,
+    target_lane: f64,
+    duration: f64,
+) -> Result<String> {
+    let mut state_lock = state.lock().unwrap();
+    let scenario = state_lock.scenarios.get_mut(&scenario_id)
+        .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
+    
+    // Ensure story structure exists
+    let act_name = format!("{}_act", story_name);
+    let mg_name = format!("{}_mg", entity_name);
+    let maneuver_name = format!("{}_maneuver", entity_name);
+    let event_name = "lane_change_event";
+    
+    // Try to create story structure (ignore errors if already exists)
+    let _ = scenario.add_story(&story_name);
+    let _ = scenario.add_act(&story_name, &act_name);
+    let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
+    let _ = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone());
+    let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
+    
+    // Add lane change action
+    scenario.add_lane_change_action(
+        &story_name,
+        &act_name,
+        &mg_name,
+        &maneuver_name,
+        event_name,
+        target_lane,
+        duration,
+        TransitionShape::Linear,
+    )?;
+    
+    Ok(format!("Lane change action added: target lane offset {} over {} seconds", target_lane, duration))
+}
+
+/// Export a scenario to an XML file
+pub fn handle_export_xml(
+    state: Arc<Mutex<ServerState>>,
+    scenario_id: String,
+    output_path: String,
+) -> Result<String> {
+    let state_lock = state.lock().unwrap();
+    let scenario = state_lock.scenarios.get(&scenario_id)
+        .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
+    
+    // Generate XML
+    let xml_content = scenario.to_xml()?;
+    
+    // Write to file
+    fs::write(&output_path, xml_content)
+        .map_err(|e| anyhow!("Failed to write XML file: {}", e))?;
+    
+    Ok(format!("Exported scenario to: {}", output_path))
 }
