@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use crate::opendrive_validator::{OpenDriveValidator, ValidationError};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Orientation {
@@ -136,6 +137,23 @@ impl Position {
             Self::RelativeLane { entity, .. } |
             Self::RelativeRoad { entity, .. } => Some(entity),
             _ => None,
+        }
+    }
+    
+    /// Validate this position against an OpenDRIVE road network
+    pub fn validate(&self, validator: &OpenDriveValidator) -> Result<(), ValidationError> {
+        match self {
+            Self::Lane { road_id, lane_id, s, .. } => {
+                validator.validate_lane_position(road_id, *lane_id)?;
+                validator.validate_road_position(road_id, *s)?;
+                Ok(())
+            }
+            Self::Road { road_id, s, .. } => {
+                validator.validate_road_position(road_id, *s)?;
+                Ok(())
+            }
+            // World and relative positions don't have direct OpenDRIVE validation
+            _ => Ok(()),
         }
     }
 }

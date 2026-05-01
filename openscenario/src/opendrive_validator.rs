@@ -12,7 +12,7 @@ pub enum ValidationError {
     RoadNotFound(String),
     
     #[error("Lane {1} not found in road '{0}'")]
-    LaneNotFound(String, i64),
+    LaneNotFound(String, i32),
     
     #[error("Position {1} is out of bounds for road '{0}' (length: {2})")]
     PositionOutOfBounds(String, f64, f64),
@@ -26,7 +26,7 @@ pub struct OpenDriveValidator {
 
 struct RoadInfo {
     length: f64,
-    lane_ids: Vec<i64>,
+    lane_ids: Vec<i32>,
 }
 
 impl OpenDriveValidator {
@@ -49,24 +49,28 @@ impl OpenDriveValidator {
                 // Add left lanes
                 if let Some(left) = &lane_section.left {
                     for lane in &left.lane {
-                        if !lane_ids.contains(&lane.id) {
-                            lane_ids.push(lane.id);
+                        // Cast i64 to i32 (OpenDRIVE spec keeps lane IDs in i32 range)
+                        let lane_id = lane.id as i32;
+                        if !lane_ids.contains(&lane_id) {
+                            lane_ids.push(lane_id);
                         }
                     }
                 }
                 
                 // Add center lanes
                 for lane in &lane_section.center.lane {
-                    if !lane_ids.contains(&lane.id) {
-                        lane_ids.push(lane.id);
+                    let lane_id = lane.id as i32;
+                    if !lane_ids.contains(&lane_id) {
+                        lane_ids.push(lane_id);
                     }
                 }
                 
                 // Add right lanes
                 if let Some(right) = &lane_section.right {
                     for lane in &right.lane {
-                        if !lane_ids.contains(&lane.id) {
-                            lane_ids.push(lane.id);
+                        let lane_id = lane.id as i32;
+                        if !lane_ids.contains(&lane_id) {
+                            lane_ids.push(lane_id);
                         }
                     }
                 }
@@ -98,7 +102,7 @@ impl OpenDriveValidator {
     }
     
     /// Validate a lane position (road + lane ID)
-    pub fn validate_lane_position(&self, road_id: &str, lane_id: i64) -> Result<(), ValidationError> {
+    pub fn validate_lane_position(&self, road_id: &str, lane_id: i32) -> Result<(), ValidationError> {
         let road_info = self
             .road_cache
             .get(road_id)
@@ -113,6 +117,15 @@ impl OpenDriveValidator {
     
     /// Validate a road position (road + s-coordinate)
     pub fn validate_road_position(&self, road_id: &str, s: f64) -> Result<(), ValidationError> {
+        // Check for NaN and infinity
+        if !s.is_finite() {
+            return Err(ValidationError::PositionOutOfBounds(
+                road_id.to_string(),
+                s,
+                0.0, // length is irrelevant for NaN/infinity
+            ));
+        }
+        
         let road_info = self
             .road_cache
             .get(road_id)
