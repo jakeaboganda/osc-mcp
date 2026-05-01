@@ -31,7 +31,8 @@ pub fn handle_create_scenario(
     let scenario_id = format!("{}_{}", name, Uuid::new_v4());
     
     // Store in state
-    let mut state_lock = state.lock().unwrap();
+    let mut state_lock = state.lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     state_lock.scenarios.insert(scenario_id.clone(), scenario);
     
     Ok(scenario_id)
@@ -81,7 +82,8 @@ pub fn handle_add_vehicle(
     };
     
     // Get scenario and add vehicle
-    let mut state_lock = state.lock().unwrap();
+    let mut state_lock = state.lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     let scenario = state_lock.scenarios.get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
     
@@ -103,7 +105,8 @@ pub fn handle_set_position(
     let position = Position::world(x, y, z, h);
     
     // Get scenario and set position
-    let mut state_lock = state.lock().unwrap();
+    let mut state_lock = state.lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     let scenario = state_lock.scenarios.get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
     
@@ -122,7 +125,8 @@ pub fn handle_add_speed_action(
     speed: f64,
     duration: f64,
 ) -> Result<String> {
-    let mut state_lock = state.lock().unwrap();
+    let mut state_lock = state.lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     let scenario = state_lock.scenarios.get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
     
@@ -164,7 +168,8 @@ pub fn handle_add_lane_change_action(
     target_lane: f64,
     duration: f64,
 ) -> Result<String> {
-    let mut state_lock = state.lock().unwrap();
+    let mut state_lock = state.lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     let scenario = state_lock.scenarios.get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
     
@@ -202,7 +207,8 @@ pub fn handle_export_xml(
     scenario_id: String,
     output_path: String,
 ) -> Result<String> {
-    let state_lock = state.lock().unwrap();
+    let state_lock = state.lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     let scenario = state_lock.scenarios.get(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
     
@@ -221,7 +227,8 @@ pub fn handle_validate_scenario(
     state: Arc<Mutex<ServerState>>,
     scenario_id: String,
 ) -> Result<String> {
-    let state_lock = state.lock().unwrap();
+    let state_lock = state.lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     let scenario = state_lock.scenarios.get(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
     
