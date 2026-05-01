@@ -7,6 +7,10 @@ authors.workspace = true
 repository.workspace = true
 description = "MCP server for OpenSCENARIO scenario generation"
 
+[lib]
+name = "openscenario_mcp"
+path = "src/lib.rs"
+
 [[bin]]
 name = "openscenario-mcp"
 path = "src/main.rs"
@@ -21,3 +25,4 @@ uuid = { version = "1.0", features = ["v4"] }
 anyhow = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+once_cell = "1.19"

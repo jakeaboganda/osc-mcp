@@ -1,7 +1,4 @@
-mod server;
-mod tools;
-
-use server::OpenScenarioServer;
+use openscenario_mcp::server::OpenScenarioServer;
 use mcp_sdk::server::Server;
 use mcp_sdk::transport::ServerStdioTransport;
 use mcp_sdk::types::ServerCapabilities;
