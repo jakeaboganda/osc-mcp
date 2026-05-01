@@ -29,7 +29,10 @@ fn test_invalid_xml() {
 
     let report = validator.validate(xml);
     assert!(!report.valid, "Malformed XML should fail validation");
-    assert!(!report.errors.is_empty(), "Errors expected for malformed XML");
+    assert!(
+        !report.errors.is_empty(),
+        "Errors expected for malformed XML"
+    );
 }
 
 #[test]
@@ -44,7 +47,10 @@ fn test_version_mismatch() {
     let report = validator.validate(xml);
     assert!(!report.valid, "Version mismatch should fail validation");
     assert!(
-        report.errors.iter().any(|e| e.to_lowercase().contains("version")),
+        report
+            .errors
+            .iter()
+            .any(|e| e.to_lowercase().contains("version")),
         "Should report version mismatch error"
     );
 }

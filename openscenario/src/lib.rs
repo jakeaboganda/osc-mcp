@@ -11,11 +11,11 @@ pub mod validation;
 pub mod version;
 pub mod xml;
 
-pub use catalog::{Catalog, CatalogType, CatalogEntry};
-pub use entities::{Entity, VehicleParams, PedestrianParams, MiscObjectParams};
-pub use error::{ScenarioError, Result};
+pub use catalog::{Catalog, CatalogEntry, CatalogType};
+pub use entities::{Entity, MiscObjectParams, PedestrianParams, VehicleParams};
+pub use error::{Result, ScenarioError};
 pub use position::Position;
 pub use scenario::Scenario;
-pub use storyboard::{Storyboard, TransitionShape, Action, SpeedAction, LaneChangeAction};
+pub use storyboard::{Action, LaneChangeAction, SpeedAction, Storyboard, TransitionShape};
 pub use validation::{ValidationReport, XsdValidator};
 pub use version::OpenScenarioVersion;

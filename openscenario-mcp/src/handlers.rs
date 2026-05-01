@@ -1,14 +1,14 @@
 use crate::server::ServerState;
-use openscenario::{Scenario, OpenScenarioVersion};
-use openscenario::entities::{VehicleCategory, VehicleParams, CatalogReference};
-use openscenario::Position;
+use anyhow::{anyhow, Result};
+use openscenario::entities::{CatalogReference, VehicleCategory, VehicleParams};
 use openscenario::storyboard::TransitionShape;
 use openscenario::validation::XsdValidator;
-use std::sync::{Arc, Mutex};
-use std::fs;
-use anyhow::{Result, anyhow};
-use uuid::Uuid;
+use openscenario::Position;
+use openscenario::{OpenScenarioVersion, Scenario};
 use serde_json::json;
+use std::fs;
+use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 /// Create a new OpenSCENARIO scenario
 pub fn handle_create_scenario(
@@ -21,20 +21,26 @@ pub fn handle_create_scenario(
         "1.0" => OpenScenarioVersion::V1_0,
         "1.1" => OpenScenarioVersion::V1_1,
         "1.2" => OpenScenarioVersion::V1_2,
-        _ => return Err(anyhow!("Invalid version: {}. Must be 1.0, 1.1, or 1.2", version)),
+        _ => {
+            return Err(anyhow!(
+                "Invalid version: {}. Must be 1.0, 1.1, or 1.2",
+                version
+            ))
+        }
     };
-    
+
     // Create scenario
     let scenario = Scenario::new(osc_version);
-    
+
     // Generate unique ID
     let scenario_id = format!("{}_{}", name, Uuid::new_v4());
-    
+
     // Store in state
-    let mut state_lock = state.lock()
+    let mut state_lock = state
+        .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
     state_lock.scenarios.insert(scenario_id.clone(), scenario);
-    
+
     Ok(scenario_id)
 }
 
@@ -57,7 +63,7 @@ pub fn handle_add_vehicle(
         "Bicycle" => VehicleCategory::Bicycle,
         _ => return Err(anyhow!("Invalid vehicle category: {}", category)),
     };
-    
+
     // Parse catalog if provided
     let catalog_ref = catalog.map(|path| {
         // Simple format: "path:entry_name"
@@ -74,21 +80,24 @@ pub fn handle_add_vehicle(
             }
         }
     });
-    
+
     let params = VehicleParams {
         catalog: catalog_ref,
         vehicle_category,
         properties: None,
     };
-    
+
     // Get scenario and add vehicle
-    let mut state_lock = state.lock()
+    let mut state_lock = state
+        .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
-    let scenario = state_lock.scenarios.get_mut(&scenario_id)
+    let scenario = state_lock
+        .scenarios
+        .get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
-    
+
     scenario.add_vehicle(name.clone(), params)?;
-    
+
     Ok(name)
 }
 
@@ -103,15 +112,18 @@ pub fn handle_set_position(
     h: f64,
 ) -> Result<String> {
     let position = Position::world(x, y, z, h);
-    
+
     // Get scenario and set position
-    let mut state_lock = state.lock()
+    let mut state_lock = state
+        .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
-    let scenario = state_lock.scenarios.get_mut(&scenario_id)
+    let scenario = state_lock
+        .scenarios
+        .get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
-    
+
     scenario.set_initial_position(entity_name.clone(), position)?;
-    
+
     Ok(format!("Position set for entity: {}", entity_name))
 }
 
@@ -125,24 +137,27 @@ pub fn handle_add_speed_action(
     speed: f64,
     duration: f64,
 ) -> Result<String> {
-    let mut state_lock = state.lock()
+    let mut state_lock = state
+        .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
-    let scenario = state_lock.scenarios.get_mut(&scenario_id)
+    let scenario = state_lock
+        .scenarios
+        .get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
-    
+
     // Ensure story structure exists
     let act_name = format!("{}_act", story_name);
     let mg_name = format!("{}_mg", entity_name);
     let maneuver_name = format!("{}_maneuver", entity_name);
     let event_name = "speed_event";
-    
+
     // Try to create story structure (ignore errors if already exists)
     let _ = scenario.add_story(&story_name);
     let _ = scenario.add_act(&story_name, &act_name);
     let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
     let _ = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone());
     let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
-    
+
     // Add speed action
     scenario.add_speed_action(
         &story_name,
@@ -154,8 +169,11 @@ pub fn handle_add_speed_action(
         duration,
         TransitionShape::Linear,
     )?;
-    
-    Ok(format!("Speed action added: {} m/s over {} seconds", speed, duration))
+
+    Ok(format!(
+        "Speed action added: {} m/s over {} seconds",
+        speed, duration
+    ))
 }
 
 /// Add a lane change action to a scenario
@@ -168,24 +186,27 @@ pub fn handle_add_lane_change_action(
     target_lane: f64,
     duration: f64,
 ) -> Result<String> {
-    let mut state_lock = state.lock()
+    let mut state_lock = state
+        .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
-    let scenario = state_lock.scenarios.get_mut(&scenario_id)
+    let scenario = state_lock
+        .scenarios
+        .get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
-    
+
     // Ensure story structure exists
     let act_name = format!("{}_act", story_name);
     let mg_name = format!("{}_mg", entity_name);
     let maneuver_name = format!("{}_maneuver", entity_name);
     let event_name = "lane_change_event";
-    
+
     // Try to create story structure (ignore errors if already exists)
     let _ = scenario.add_story(&story_name);
     let _ = scenario.add_act(&story_name, &act_name);
     let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
     let _ = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone());
     let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
-    
+
     // Add lane change action
     scenario.add_lane_change_action(
         &story_name,
@@ -197,8 +218,11 @@ pub fn handle_add_lane_change_action(
         duration,
         TransitionShape::Linear,
     )?;
-    
-    Ok(format!("Lane change action added: target lane offset {} over {} seconds", target_lane, duration))
+
+    Ok(format!(
+        "Lane change action added: target lane offset {} over {} seconds",
+        target_lane, duration
+    ))
 }
 
 /// Export a scenario to an XML file
@@ -207,18 +231,20 @@ pub fn handle_export_xml(
     scenario_id: String,
     output_path: String,
 ) -> Result<String> {
-    let state_lock = state.lock()
+    let state_lock = state
+        .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
-    let scenario = state_lock.scenarios.get(&scenario_id)
+    let scenario = state_lock
+        .scenarios
+        .get(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
-    
+
     // Generate XML
     let xml_content = scenario.to_xml()?;
-    
+
     // Write to file
-    fs::write(&output_path, xml_content)
-        .map_err(|e| anyhow!("Failed to write XML file: {}", e))?;
-    
+    fs::write(&output_path, xml_content).map_err(|e| anyhow!("Failed to write XML file: {}", e))?;
+
     Ok(format!("Exported scenario to: {}", output_path))
 }
 
@@ -227,26 +253,29 @@ pub fn handle_validate_scenario(
     state: Arc<Mutex<ServerState>>,
     scenario_id: String,
 ) -> Result<String> {
-    let state_lock = state.lock()
+    let state_lock = state
+        .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
-    let scenario = state_lock.scenarios.get(&scenario_id)
+    let scenario = state_lock
+        .scenarios
+        .get(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
-    
+
     // Generate XML
     let xml_content = scenario.to_xml()?;
-    
+
     // Get version string
     let version_str = scenario.version().to_string();
-    
+
     // Create validator and validate
     let validator = XsdValidator::new(version_str);
     let report = validator.validate(&xml_content);
-    
+
     // Format as JSON report
     let json_report = json!({
         "valid": report.valid,
         "errors": report.errors
     });
-    
+
     Ok(json_report.to_string())
 }

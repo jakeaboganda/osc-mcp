@@ -10,54 +10,41 @@ pub enum ScenarioError {
         name: String,
         existing_location: Option<String>,
     },
-    
+
     #[error("Story '{name}' not found. Available stories: {available:?}")]
     StoryNotFound {
         name: String,
         available: Vec<String>,
     },
-    
+
     #[error("Entity '{entity}' not found (referenced by {context})")]
-    EntityNotFound {
-        entity: String,
-        context: String,
-    },
-    
+    EntityNotFound { entity: String, context: String },
+
     #[error("Feature '{feature}' requires OpenSCENARIO {required_version}+, but scenario is version {current_version}")]
     VersionMismatch {
         feature: String,
         required_version: String,
         current_version: String,
     },
-    
+
     #[error("XSD validation failed: {message}")]
-    XsdViolation {
-        message: String,
-    },
-    
+    XsdViolation { message: String },
+
     #[error("Road '{road_id}' not found in loaded OpenDRIVE network. Load road network first with load_road_network()")]
-    RoadNotFound {
-        road_id: String,
-    },
-    
+    RoadNotFound { road_id: String },
+
     #[error("Catalog '{path}' not found or could not be loaded: {reason}")]
-    CatalogLoadError {
-        path: String,
-        reason: String,
-    },
-    
+    CatalogLoadError { path: String, reason: String },
+
     #[error("Invalid catalog reference: catalog '{catalog}' entry '{entry}' not found")]
-    CatalogEntryNotFound {
-        catalog: String,
-        entry: String,
-    },
-    
+    CatalogEntryNotFound { catalog: String, entry: String },
+
     #[error("Invalid catalog: {0}")]
     InvalidCatalog(String),
-    
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    
+
     #[error("XML error: {0}")]
     Xml(#[from] quick_xml::Error),
 }

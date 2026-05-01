@@ -1,50 +1,62 @@
-use quick_xml::Writer;
-use quick_xml::events::{Event as XmlEvent, BytesStart, BytesEnd};
-use std::io::Cursor;
-use crate::{Scenario, Result, ScenarioError};
 use crate::entities::Entity;
+use crate::storyboard::{Act, Action, Event, Maneuver, ManeuverGroup, Story};
 use crate::Position;
-use crate::storyboard::{Story, Act, ManeuverGroup, Maneuver, Event, Action};
+use crate::{Result, Scenario, ScenarioError};
+use quick_xml::events::{BytesEnd, BytesStart, Event as XmlEvent};
+use quick_xml::Writer;
+use std::io::Cursor;
 
 impl Scenario {
     pub fn to_xml(&self) -> Result<String> {
         let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
-        
+
         // XML declaration
-        writer.write_event(XmlEvent::Decl(quick_xml::events::BytesDecl::new("1.0", Some("UTF-8"), None)))
-            .map_err(|e| ScenarioError::Xml(quick_xml::Error::Io(std::sync::Arc::new(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))))?;
-        
+        writer
+            .write_event(XmlEvent::Decl(quick_xml::events::BytesDecl::new(
+                "1.0",
+                Some("UTF-8"),
+                None,
+            )))
+            .map_err(|e| {
+                ScenarioError::Xml(quick_xml::Error::Io(std::sync::Arc::new(
+                    std::io::Error::other(e.to_string()),
+                )))
+            })?;
+
         // Root element
         let mut root = BytesStart::new("OpenSCENARIO");
         root.push_attribute(("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance"));
         root.push_attribute(("xsi:noNamespaceSchemaLocation", "OpenSCENARIO.xsd"));
         writer.write_event(XmlEvent::Start(root.borrow()))?;
-        
+
         // FileHeader
         self.write_file_header(&mut writer)?;
-        
+
         // CatalogLocations (empty for now)
         writer.write_event(XmlEvent::Empty(BytesStart::new("CatalogLocations")))?;
-        
+
         // RoadNetwork (empty for now)
         writer.write_event(XmlEvent::Empty(BytesStart::new("RoadNetwork")))?;
-        
+
         // Entities
         self.write_entities(&mut writer)?;
-        
+
         // Storyboard
         self.write_storyboard(&mut writer)?;
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("OpenSCENARIO")))?;
-        
+
         let result = writer.into_inner().into_inner();
-        String::from_utf8(result)
-            .map_err(|e| ScenarioError::Xml(quick_xml::Error::Io(std::sync::Arc::new(
-                std::io::Error::new(std::io::ErrorKind::InvalidData, 
-                    format!("Invalid UTF-8 in generated XML: {}", e))
-            ))))
+        String::from_utf8(result).map_err(|e| {
+            ScenarioError::Xml(quick_xml::Error::Io(std::sync::Arc::new(
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Invalid UTF-8 in generated XML: {}", e),
+                ),
+            )))
+        })
     }
-    
+
     fn write_file_header<W: std::io::Write>(&self, writer: &mut Writer<W>) -> Result<()> {
         let mut elem = BytesStart::new("FileHeader");
         elem.push_attribute(("revMajor", self.version().major().to_string().as_str()));
@@ -55,29 +67,36 @@ impl Scenario {
         writer.write_event(XmlEvent::Empty(elem))?;
         Ok(())
     }
-    
+
     fn write_entities<W: std::io::Write>(&self, writer: &mut Writer<W>) -> Result<()> {
         writer.write_event(XmlEvent::Start(BytesStart::new("Entities")))?;
-        
+
         for entity in self.entities() {
             self.write_entity(writer, entity)?;
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Entities")))?;
         Ok(())
     }
-    
-    fn write_entity<W: std::io::Write>(&self, writer: &mut Writer<W>, entity: &Entity) -> Result<()> {
+
+    fn write_entity<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        entity: &Entity,
+    ) -> Result<()> {
         let mut elem = BytesStart::new("ScenarioObject");
         elem.push_attribute(("name", entity.name()));
         writer.write_event(XmlEvent::Start(elem))?;
-        
+
         match entity {
             Entity::Vehicle(v) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("CatalogReference")))?;
                 let mut ref_elem = BytesStart::new("Vehicle");
                 ref_elem.push_attribute(("name", v.name.as_str()));
-                ref_elem.push_attribute(("vehicleCategory", format!("{:?}", v.params.vehicle_category).as_str()));
+                ref_elem.push_attribute((
+                    "vehicleCategory",
+                    format!("{:?}", v.params.vehicle_category).as_str(),
+                ));
                 writer.write_event(XmlEvent::Empty(ref_elem))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("CatalogReference")))?;
             }
@@ -96,57 +115,61 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("CatalogReference")))?;
             }
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("ScenarioObject")))?;
         Ok(())
     }
-    
+
     fn write_storyboard<W: std::io::Write>(&self, writer: &mut Writer<W>) -> Result<()> {
         writer.write_event(XmlEvent::Start(BytesStart::new("Storyboard")))?;
-        
+
         // Init
         self.write_init(writer)?;
-        
+
         // Stories
         for story in self.storyboard.stories.values() {
             self.write_story(writer, story)?;
         }
-        
+
         // StopTrigger
         writer.write_event(XmlEvent::Empty(BytesStart::new("StopTrigger")))?;
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Storyboard")))?;
         Ok(())
     }
-    
+
     fn write_init<W: std::io::Write>(&self, writer: &mut Writer<W>) -> Result<()> {
         writer.write_event(XmlEvent::Start(BytesStart::new("Init")))?;
         writer.write_event(XmlEvent::Start(BytesStart::new("Actions")))?;
-        
+
         for (entity_name, position) in self.initial_positions() {
             writer.write_event(XmlEvent::Start(BytesStart::new("Private")))?;
-            
+
             let mut ref_elem = BytesStart::new("EntityRef");
             ref_elem.push_attribute(("entityRef", entity_name.as_str()));
             writer.write_event(XmlEvent::Empty(ref_elem))?;
-            
+
             writer.write_event(XmlEvent::Start(BytesStart::new("PrivateAction")))?;
             writer.write_event(XmlEvent::Start(BytesStart::new("TeleportAction")))?;
             self.write_position(writer, position)?;
             writer.write_event(XmlEvent::End(BytesEnd::new("TeleportAction")))?;
             writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;
-            
+
             writer.write_event(XmlEvent::End(BytesEnd::new("Private")))?;
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Actions")))?;
         writer.write_event(XmlEvent::End(BytesEnd::new("Init")))?;
         Ok(())
     }
-    
-    fn write_position<W: std::io::Write>(&self, writer: &mut Writer<W>, position: &Position) -> Result<()> {
+
+    fn write_position<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        position: &Position,
+    ) -> Result<()> {
         writer.write_event(XmlEvent::Start(BytesStart::new("Position")))?;
-        
+
         match position {
             Position::World { x, y, z, h, p, r } => {
                 let mut elem = BytesStart::new("WorldPosition");
@@ -158,7 +181,13 @@ impl Scenario {
                 elem.push_attribute(("r", r.to_string().as_str()));
                 writer.write_event(XmlEvent::Empty(elem))?;
             }
-            Position::Lane { road_id, lane_id, s, offset, orientation } => {
+            Position::Lane {
+                road_id,
+                lane_id,
+                s,
+                offset,
+                orientation,
+            } => {
                 let mut elem = BytesStart::new("LanePosition");
                 elem.push_attribute(("roadId", road_id.as_str()));
                 elem.push_attribute(("laneId", lane_id.to_string().as_str()));
@@ -171,7 +200,12 @@ impl Scenario {
                 }
                 writer.write_event(XmlEvent::Empty(elem))?;
             }
-            Position::Road { road_id, s, t, orientation } => {
+            Position::Road {
+                road_id,
+                s,
+                t,
+                orientation,
+            } => {
                 let mut elem = BytesStart::new("RoadPosition");
                 elem.push_attribute(("roadId", road_id.as_str()));
                 elem.push_attribute(("s", s.to_string().as_str()));
@@ -183,41 +217,59 @@ impl Scenario {
                 }
                 writer.write_event(XmlEvent::Empty(elem))?;
             }
-            Position::RelativeWorld { entity, dx, dy, dz, orientation } => {
+            Position::RelativeWorld {
+                entity,
+                dx,
+                dy,
+                dz,
+                orientation,
+            } => {
                 let mut elem = BytesStart::new("RelativeWorldPosition");
                 elem.push_attribute(("entityRef", entity.as_str()));
                 elem.push_attribute(("dx", dx.to_string().as_str()));
                 elem.push_attribute(("dy", dy.to_string().as_str()));
                 elem.push_attribute(("dz", dz.to_string().as_str()));
                 writer.write_event(XmlEvent::Start(elem))?;
-                
+
                 let mut ori_elem = BytesStart::new("Orientation");
                 ori_elem.push_attribute(("h", orientation.h.to_string().as_str()));
                 ori_elem.push_attribute(("p", orientation.p.to_string().as_str()));
                 ori_elem.push_attribute(("r", orientation.r.to_string().as_str()));
                 ori_elem.push_attribute(("type", "relative"));
                 writer.write_event(XmlEvent::Empty(ori_elem))?;
-                
+
                 writer.write_event(XmlEvent::End(BytesEnd::new("RelativeWorldPosition")))?;
             }
-            Position::RelativeObject { entity, dx, dy, dz, orientation } => {
+            Position::RelativeObject {
+                entity,
+                dx,
+                dy,
+                dz,
+                orientation,
+            } => {
                 let mut elem = BytesStart::new("RelativeObjectPosition");
                 elem.push_attribute(("entityRef", entity.as_str()));
                 elem.push_attribute(("dx", dx.to_string().as_str()));
                 elem.push_attribute(("dy", dy.to_string().as_str()));
                 elem.push_attribute(("dz", dz.to_string().as_str()));
                 writer.write_event(XmlEvent::Start(elem))?;
-                
+
                 let mut ori_elem = BytesStart::new("Orientation");
                 ori_elem.push_attribute(("h", orientation.h.to_string().as_str()));
                 ori_elem.push_attribute(("p", orientation.p.to_string().as_str()));
                 ori_elem.push_attribute(("r", orientation.r.to_string().as_str()));
                 ori_elem.push_attribute(("type", "relative"));
                 writer.write_event(XmlEvent::Empty(ori_elem))?;
-                
+
                 writer.write_event(XmlEvent::End(BytesEnd::new("RelativeObjectPosition")))?;
             }
-            Position::RelativeLane { entity, ds, d_lane, offset, orientation } => {
+            Position::RelativeLane {
+                entity,
+                ds,
+                d_lane,
+                offset,
+                orientation,
+            } => {
                 let mut elem = BytesStart::new("RelativeLanePosition");
                 elem.push_attribute(("entityRef", entity.as_str()));
                 elem.push_attribute(("ds", ds.to_string().as_str()));
@@ -230,7 +282,12 @@ impl Scenario {
                 }
                 writer.write_event(XmlEvent::Empty(elem))?;
             }
-            Position::RelativeRoad { entity, ds, dt, orientation } => {
+            Position::RelativeRoad {
+                entity,
+                ds,
+                dt,
+                orientation,
+            } => {
                 let mut elem = BytesStart::new("RelativeRoadPosition");
                 elem.push_attribute(("entityRef", entity.as_str()));
                 elem.push_attribute(("ds", ds.to_string().as_str()));
@@ -243,46 +300,50 @@ impl Scenario {
                 writer.write_event(XmlEvent::Empty(elem))?;
             }
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Position")))?;
         Ok(())
     }
-    
+
     fn write_story<W: std::io::Write>(&self, writer: &mut Writer<W>, story: &Story) -> Result<()> {
         let mut elem = BytesStart::new("Story");
         elem.push_attribute(("name", story.name.as_str()));
         writer.write_event(XmlEvent::Start(elem))?;
-        
+
         for act in story.acts.values() {
             self.write_act(writer, act)?;
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Story")))?;
         Ok(())
     }
-    
+
     fn write_act<W: std::io::Write>(&self, writer: &mut Writer<W>, act: &Act) -> Result<()> {
         let mut elem = BytesStart::new("Act");
         elem.push_attribute(("name", act.name.as_str()));
         writer.write_event(XmlEvent::Start(elem))?;
-        
+
         for mg in act.maneuver_groups.values() {
             self.write_maneuver_group(writer, mg)?;
         }
-        
+
         // StartTrigger
         writer.write_event(XmlEvent::Empty(BytesStart::new("StartTrigger")))?;
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Act")))?;
         Ok(())
     }
-    
-    fn write_maneuver_group<W: std::io::Write>(&self, writer: &mut Writer<W>, mg: &ManeuverGroup) -> Result<()> {
+
+    fn write_maneuver_group<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        mg: &ManeuverGroup,
+    ) -> Result<()> {
         let mut elem = BytesStart::new("ManeuverGroup");
         elem.push_attribute(("maximumExecutionCount", "1"));
         elem.push_attribute(("name", mg.name.as_str()));
         writer.write_event(XmlEvent::Start(elem))?;
-        
+
         // Actors
         writer.write_event(XmlEvent::Start(BytesStart::new("Actors")))?;
         for actor in &mg.actors {
@@ -291,98 +352,123 @@ impl Scenario {
             writer.write_event(XmlEvent::Empty(ref_elem))?;
         }
         writer.write_event(XmlEvent::End(BytesEnd::new("Actors")))?;
-        
+
         // Get first actor for action context (or empty string if no actors)
         let actor = mg.actors.first().map(|s| s.as_str()).unwrap_or("");
-        
+
         // Maneuvers
         for maneuver in &mg.maneuvers {
             self.write_maneuver(writer, maneuver, actor)?;
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("ManeuverGroup")))?;
         Ok(())
     }
-    
-    fn write_maneuver<W: std::io::Write>(&self, writer: &mut Writer<W>, maneuver: &Maneuver, actor: &str) -> Result<()> {
+
+    fn write_maneuver<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        maneuver: &Maneuver,
+        actor: &str,
+    ) -> Result<()> {
         let mut elem = BytesStart::new("Maneuver");
         elem.push_attribute(("name", maneuver.name.as_str()));
         writer.write_event(XmlEvent::Start(elem))?;
-        
+
         for event in &maneuver.events {
             self.write_event(writer, event, actor)?;
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Maneuver")))?;
         Ok(())
     }
-    
-    fn write_event<W: std::io::Write>(&self, writer: &mut Writer<W>, event: &Event, actor: &str) -> Result<()> {
+
+    fn write_event<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        event: &Event,
+        actor: &str,
+    ) -> Result<()> {
         let mut elem = BytesStart::new("Event");
         elem.push_attribute(("name", event.name.as_str()));
         elem.push_attribute(("priority", "overwrite"));
         writer.write_event(XmlEvent::Start(elem))?;
-        
+
         // Actions
         for action in &event.actions {
             self.write_action(writer, action, actor)?;
         }
-        
+
         // StartTrigger
         writer.write_event(XmlEvent::Empty(BytesStart::new("StartTrigger")))?;
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Event")))?;
         Ok(())
     }
-    
-    fn write_action<W: std::io::Write>(&self, writer: &mut Writer<W>, action: &Action, actor: &str) -> Result<()> {
+
+    fn write_action<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        action: &Action,
+        actor: &str,
+    ) -> Result<()> {
         let mut elem = BytesStart::new("Action");
         elem.push_attribute(("name", "action"));
         writer.write_event(XmlEvent::Start(elem))?;
-        
+
         writer.write_event(XmlEvent::Start(BytesStart::new("PrivateAction")))?;
-        
+
         match action {
             Action::Speed(speed) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalAction")))?;
                 writer.write_event(XmlEvent::Start(BytesStart::new("SpeedAction")))?;
-                
+
                 writer.write_event(XmlEvent::Start(BytesStart::new("SpeedActionDynamics")))?;
                 let mut dyn_elem = BytesStart::new("Dynamics");
-                dyn_elem.push_attribute(("dynamicsShape", format!("{:?}", speed.shape).to_lowercase().as_str()));
+                dyn_elem.push_attribute((
+                    "dynamicsShape",
+                    format!("{:?}", speed.shape).to_lowercase().as_str(),
+                ));
                 dyn_elem.push_attribute(("value", speed.transition_duration.to_string().as_str()));
                 dyn_elem.push_attribute(("dynamicsDimension", "time"));
                 writer.write_event(XmlEvent::Empty(dyn_elem))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("SpeedActionDynamics")))?;
-                
+
                 writer.write_event(XmlEvent::Start(BytesStart::new("SpeedActionTarget")))?;
                 let mut target_elem = BytesStart::new("AbsoluteTargetSpeed");
                 target_elem.push_attribute(("value", speed.target_speed.to_string().as_str()));
                 writer.write_event(XmlEvent::Empty(target_elem))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("SpeedActionTarget")))?;
-                
+
                 writer.write_event(XmlEvent::End(BytesEnd::new("SpeedAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
             }
             Action::LaneChange(lane_change) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("LateralAction")))?;
                 writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeAction")))?;
-                
+
                 writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeActionDynamics")))?;
                 let mut dyn_elem = BytesStart::new("Dynamics");
-                dyn_elem.push_attribute(("dynamicsShape", format!("{:?}", lane_change.shape).to_lowercase().as_str()));
-                dyn_elem.push_attribute(("value", lane_change.transition_duration.to_string().as_str()));
+                dyn_elem.push_attribute((
+                    "dynamicsShape",
+                    format!("{:?}", lane_change.shape).to_lowercase().as_str(),
+                ));
+                dyn_elem.push_attribute((
+                    "value",
+                    lane_change.transition_duration.to_string().as_str(),
+                ));
                 dyn_elem.push_attribute(("dynamicsDimension", "time"));
                 writer.write_event(XmlEvent::Empty(dyn_elem))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LaneChangeActionDynamics")))?;
-                
+
                 writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeTarget")))?;
                 let mut target_elem = BytesStart::new("RelativeTargetLane");
                 target_elem.push_attribute(("entityRef", actor));
-                target_elem.push_attribute(("value", lane_change.target_lane_offset.to_string().as_str()));
+                target_elem
+                    .push_attribute(("value", lane_change.target_lane_offset.to_string().as_str()));
                 writer.write_event(XmlEvent::Empty(target_elem))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LaneChangeTarget")))?;
-                
+
                 writer.write_event(XmlEvent::End(BytesEnd::new("LaneChangeAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LateralAction")))?;
             }
@@ -393,22 +479,25 @@ impl Scenario {
             }
             Action::Distance(distance_action) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalAction")))?;
-                writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalDistanceAction")))?;
-                
+                writer.write_event(XmlEvent::Start(BytesStart::new(
+                    "LongitudinalDistanceAction",
+                )))?;
+
                 let mut entity_elem = BytesStart::new("EntityRef");
                 entity_elem.push_attribute(("entityRef", distance_action.entity_ref.as_str()));
                 writer.write_event(XmlEvent::Empty(entity_elem))?;
-                
+
                 let mut dist_elem = BytesStart::new("Distance");
                 dist_elem.push_attribute(("value", distance_action.distance.to_string().as_str()));
-                dist_elem.push_attribute(("freespace", distance_action.freespace.to_string().as_str()));
+                dist_elem
+                    .push_attribute(("freespace", distance_action.freespace.to_string().as_str()));
                 writer.write_event(XmlEvent::Empty(dist_elem))?;
-                
+
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalDistanceAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
             }
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;
         writer.write_event(XmlEvent::End(BytesEnd::new("Action")))?;
         Ok(())

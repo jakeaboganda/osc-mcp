@@ -1,5 +1,5 @@
-use openscenario::{Scenario, OpenScenarioVersion, Position};
-use openscenario::entities::{VehicleParams, VehicleCategory};
+use openscenario::entities::{VehicleCategory, VehicleParams};
+use openscenario::{OpenScenarioVersion, Position, Scenario};
 
 #[test]
 fn test_add_position_action() {
@@ -12,20 +12,20 @@ fn test_add_position_action() {
     scenario.add_vehicle("ego", params).unwrap();
     scenario.add_story("main_story").unwrap();
     scenario.add_act("main_story", "act1").unwrap();
-    scenario.add_maneuver_group("main_story", "act1", "mg1").unwrap();
-    scenario.add_actor("main_story", "act1", "mg1", "ego").unwrap();
-    scenario.add_maneuver("main_story", "act1", "mg1", "maneuver1").unwrap();
-    
+    scenario
+        .add_maneuver_group("main_story", "act1", "mg1")
+        .unwrap();
+    scenario
+        .add_actor("main_story", "act1", "mg1", "ego")
+        .unwrap();
+    scenario
+        .add_maneuver("main_story", "act1", "mg1", "maneuver1")
+        .unwrap();
+
     let position = Position::world(100.0, 200.0, 0.0, 1.57);
-    let result = scenario.add_position_action(
-        "main_story",
-        "act1",
-        "mg1",
-        "maneuver1",
-        "event1",
-        position,
-    );
-    
+    let result =
+        scenario.add_position_action("main_story", "act1", "mg1", "maneuver1", "event1", position);
+
     assert!(result.is_ok());
 }
 
@@ -41,10 +41,16 @@ fn test_add_distance_action() {
     scenario.add_vehicle("target", params).unwrap();
     scenario.add_story("main_story").unwrap();
     scenario.add_act("main_story", "act1").unwrap();
-    scenario.add_maneuver_group("main_story", "act1", "mg1").unwrap();
-    scenario.add_actor("main_story", "act1", "mg1", "ego").unwrap();
-    scenario.add_maneuver("main_story", "act1", "mg1", "maneuver1").unwrap();
-    
+    scenario
+        .add_maneuver_group("main_story", "act1", "mg1")
+        .unwrap();
+    scenario
+        .add_actor("main_story", "act1", "mg1", "ego")
+        .unwrap();
+    scenario
+        .add_maneuver("main_story", "act1", "mg1", "maneuver1")
+        .unwrap();
+
     let result = scenario.add_distance_action(
         "main_story",
         "act1",
@@ -55,7 +61,7 @@ fn test_add_distance_action() {
         30.0,
         true,
     );
-    
+
     assert!(result.is_ok());
 }
 
@@ -70,20 +76,21 @@ fn test_position_action_in_xml() {
     scenario.add_vehicle("ego", params).unwrap();
     scenario.add_story("main_story").unwrap();
     scenario.add_act("main_story", "act1").unwrap();
-    scenario.add_maneuver_group("main_story", "act1", "mg1").unwrap();
-    scenario.add_actor("main_story", "act1", "mg1", "ego").unwrap();
-    scenario.add_maneuver("main_story", "act1", "mg1", "maneuver1").unwrap();
-    
+    scenario
+        .add_maneuver_group("main_story", "act1", "mg1")
+        .unwrap();
+    scenario
+        .add_actor("main_story", "act1", "mg1", "ego")
+        .unwrap();
+    scenario
+        .add_maneuver("main_story", "act1", "mg1", "maneuver1")
+        .unwrap();
+
     let position = Position::world(100.0, 200.0, 0.0, 1.57);
-    scenario.add_position_action(
-        "main_story",
-        "act1",
-        "mg1",
-        "maneuver1",
-        "event1",
-        position,
-    ).unwrap();
-    
+    scenario
+        .add_position_action("main_story", "act1", "mg1", "maneuver1", "event1", position)
+        .unwrap();
+
     let xml = scenario.to_xml().unwrap();
     assert!(xml.contains("<TeleportAction>"));
     assert!(xml.contains("<Position>"));

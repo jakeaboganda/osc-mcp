@@ -66,7 +66,7 @@ fn create_pedestrian_catalog(dir: &TempDir) -> PathBuf {
 fn test_load_vehicle_catalog() {
     let dir = test_data_dir();
     let path = create_vehicle_catalog(&dir);
-    
+
     let catalog = Catalog::from_file(&path).unwrap();
     assert_eq!(catalog.catalog_type(), CatalogType::Vehicle);
     assert_eq!(catalog.entries().len(), 2);
@@ -76,9 +76,9 @@ fn test_load_vehicle_catalog() {
 fn test_find_entry() {
     let dir = test_data_dir();
     let path = create_vehicle_catalog(&dir);
-    
+
     let catalog = Catalog::from_file(&path).unwrap();
-    
+
     let entry = catalog.find("sedan").unwrap();
     assert_eq!(entry.name(), "sedan");
     match entry.entity() {
@@ -88,7 +88,7 @@ fn test_find_entry() {
         }
         _ => panic!("Expected Vehicle entity"),
     }
-    
+
     let suv = catalog.find("suv").unwrap();
     assert_eq!(suv.name(), "suv");
     match suv.entity() {
@@ -98,7 +98,7 @@ fn test_find_entry() {
         }
         _ => panic!("Expected Vehicle entity"),
     }
-    
+
     assert!(catalog.find("nonexistent").is_none());
 }
 
@@ -106,11 +106,11 @@ fn test_find_entry() {
 fn test_load_pedestrian_catalog() {
     let dir = test_data_dir();
     let path = create_pedestrian_catalog(&dir);
-    
+
     let catalog = Catalog::from_file(&path).unwrap();
     assert_eq!(catalog.catalog_type(), CatalogType::Pedestrian);
     assert_eq!(catalog.entries().len(), 1);
-    
+
     let adult = catalog.find("adult").unwrap();
     assert_eq!(adult.name(), "adult");
     match adult.entity() {
@@ -123,10 +123,10 @@ fn test_load_pedestrian_catalog() {
 fn test_clone_entity() {
     let dir = test_data_dir();
     let path = create_vehicle_catalog(&dir);
-    
+
     let catalog = Catalog::from_file(&path).unwrap();
     let entry = catalog.find("sedan").unwrap();
-    
+
     let cloned = entry.clone_entity();
     match cloned {
         Entity::Vehicle(vehicle) => {
@@ -142,7 +142,7 @@ fn test_invalid_catalog() {
 <OpenSCENARIO>
   <InvalidCatalog/>
 </OpenSCENARIO>"#;
-    
+
     let result = Catalog::from_xml(invalid_xml);
     assert!(result.is_err());
 }

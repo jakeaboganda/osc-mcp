@@ -17,11 +17,11 @@ impl OpenScenarioVersion {
             _ => None,
         }
     }
-    
+
     pub fn major(&self) -> u8 {
         1
     }
-    
+
     pub fn minor(&self) -> u8 {
         match self {
             Self::V1_0 => 0,

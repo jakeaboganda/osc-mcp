@@ -4,10 +4,10 @@ use openscenario::OpenScenarioVersion;
 fn test_version_from_header() {
     let v = OpenScenarioVersion::from_rev(1, 0);
     assert_eq!(v, Some(OpenScenarioVersion::V1_0));
-    
+
     let v = OpenScenarioVersion::from_rev(1, 2);
     assert_eq!(v, Some(OpenScenarioVersion::V1_2));
-    
+
     let v = OpenScenarioVersion::from_rev(2, 0);
     assert_eq!(v, None);
 }

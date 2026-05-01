@@ -41,39 +41,37 @@ impl XsdValidator {
 
         loop {
             match reader.read_event_into(&mut buf) {
-                Ok(quick_xml::events::Event::Start(e)) | Ok(quick_xml::events::Event::Empty(e)) => {
-                    if e.name().as_ref() == b"FileHeader" {
-                        found_file_header = true;
-                        // Extract revMajor and revMinor attributes
-                        let mut rev_major = None;
-                        let mut rev_minor = None;
+                Ok(quick_xml::events::Event::Start(e)) | Ok(quick_xml::events::Event::Empty(e))
+                    if e.name().as_ref() == b"FileHeader" =>
+                {
+                    found_file_header = true;
+                    // Extract revMajor and revMinor attributes
+                    let mut rev_major = None;
+                    let mut rev_minor = None;
 
-                        for attr in e.attributes() {
-                            match attr {
-                                Ok(attr) => {
-                                    match attr.key.as_ref() {
-                                        b"revMajor" => {
-                                            if let Ok(value) = attr.unescape_value() {
-                                                rev_major = Some(value.to_string());
-                                            }
-                                        }
-                                        b"revMinor" => {
-                                            if let Ok(value) = attr.unescape_value() {
-                                                rev_minor = Some(value.to_string());
-                                            }
-                                        }
-                                        _ => {}
+                    for attr in e.attributes() {
+                        match attr {
+                            Ok(attr) => match attr.key.as_ref() {
+                                b"revMajor" => {
+                                    if let Ok(value) = attr.unescape_value() {
+                                        rev_major = Some(value.to_string());
                                     }
                                 }
-                                Err(e) => {
-                                    errors.push(format!("Error reading attribute: {}", e));
+                                b"revMinor" => {
+                                    if let Ok(value) = attr.unescape_value() {
+                                        rev_minor = Some(value.to_string());
+                                    }
                                 }
+                                _ => {}
+                            },
+                            Err(e) => {
+                                errors.push(format!("Error reading attribute: {}", e));
                             }
                         }
+                    }
 
-                        if let (Some(major), Some(minor)) = (rev_major, rev_minor) {
-                            file_header_version = Some(format!("{}.{}", major, minor));
-                        }
+                    if let (Some(major), Some(minor)) = (rev_major, rev_minor) {
+                        file_header_version = Some(format!("{}.{}", major, minor));
                     }
                 }
                 Ok(quick_xml::events::Event::Eof) => break,

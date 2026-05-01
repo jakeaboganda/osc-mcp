@@ -4,8 +4,8 @@
 //! reusable entity definitions (Vehicle, Pedestrian, MiscObject).
 
 use crate::entities::{
-    Entity, Vehicle, VehicleParams, VehicleCategory,
-    Pedestrian, PedestrianParams, MiscObject, MiscObjectParams,
+    Entity, MiscObject, MiscObjectParams, Pedestrian, PedestrianParams, Vehicle, VehicleCategory,
+    VehicleParams,
 };
 use crate::error::{Result, ScenarioError};
 use quick_xml::events::Event;
@@ -77,7 +77,10 @@ impl Catalog {
         let catalog_type = catalog_type
             .ok_or_else(|| ScenarioError::InvalidCatalog("No catalog type found".to_string()))?;
 
-        Ok(Catalog { catalog_type, entries })
+        Ok(Catalog {
+            catalog_type,
+            entries,
+        })
     }
 
     /// Parse a single catalog entry
@@ -102,7 +105,9 @@ impl Catalog {
                         b"Dimensions" => {
                             // Parse dimensions
                             for attr in e.attributes() {
-                                let attr = attr.map_err(|e| ScenarioError::Xml(quick_xml::Error::InvalidAttr(e)))?;
+                                let attr = attr.map_err(|e| {
+                                    ScenarioError::Xml(quick_xml::Error::InvalidAttr(e))
+                                })?;
                                 let value_str = String::from_utf8_lossy(&attr.value);
                                 let value = value_str.parse::<f64>().unwrap_or(0.0);
                                 match attr.key.as_ref() {
@@ -116,10 +121,8 @@ impl Catalog {
                         _ => {}
                     }
                 }
-                Ok(Event::End(ref e)) => {
-                    if e.name().as_ref() == entry_type {
-                        break;
-                    }
+                Ok(Event::End(ref e)) if e.name().as_ref() == entry_type => {
+                    break;
                 }
                 Ok(Event::Eof) => break,
                 Err(e) => return Err(ScenarioError::Xml(e)),
@@ -143,29 +146,32 @@ impl Catalog {
 
         loop {
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) | Ok(Event::Empty(ref e)) => {
-                    if e.name().as_ref() == b"Property" {
-                        let mut prop_name = None;
-                        let mut prop_value = None;
+                Ok(Event::Start(ref e)) | Ok(Event::Empty(ref e))
+                    if e.name().as_ref() == b"Property" =>
+                {
+                    let mut prop_name = None;
+                    let mut prop_value = None;
 
-                        for attr in e.attributes() {
-                            let attr = attr.map_err(|e| ScenarioError::Xml(quick_xml::Error::InvalidAttr(e)))?;
-                            match attr.key.as_ref() {
-                                b"name" => prop_name = Some(String::from_utf8_lossy(&attr.value).to_string()),
-                                b"value" => prop_value = Some(String::from_utf8_lossy(&attr.value).to_string()),
-                                _ => {}
+                    for attr in e.attributes() {
+                        let attr =
+                            attr.map_err(|e| ScenarioError::Xml(quick_xml::Error::InvalidAttr(e)))?;
+                        match attr.key.as_ref() {
+                            b"name" => {
+                                prop_name = Some(String::from_utf8_lossy(&attr.value).to_string())
                             }
+                            b"value" => {
+                                prop_value = Some(String::from_utf8_lossy(&attr.value).to_string())
+                            }
+                            _ => {}
                         }
+                    }
 
-                        if prop_name.as_deref() == Some("name") {
-                            name = prop_value;
-                        }
+                    if prop_name.as_deref() == Some("name") {
+                        name = prop_value;
                     }
                 }
-                Ok(Event::End(ref e)) => {
-                    if e.name().as_ref() == b"Properties" {
-                        break;
-                    }
+                Ok(Event::End(ref e)) if e.name().as_ref() == b"Properties" => {
+                    break;
                 }
                 Ok(Event::Eof) => break,
                 Err(e) => return Err(ScenarioError::Xml(e)),
@@ -208,9 +214,10 @@ impl Catalog {
                     mass: Some(100.0),
                 },
             })),
-            _ => Err(ScenarioError::InvalidCatalog(
-                format!("Unknown entity type: {}", String::from_utf8_lossy(entity_type))
-            )),
+            _ => Err(ScenarioError::InvalidCatalog(format!(
+                "Unknown entity type: {}",
+                String::from_utf8_lossy(entity_type)
+            ))),
         }
     }
 
