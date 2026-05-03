@@ -43,8 +43,13 @@ fn test_multi_vehicle_scenario() {
 
     // Export and verify all vehicles are present
     let output_path = "/tmp/multi_vehicle_test.xosc";
-    let export_result = handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
-    assert!(export_result.is_ok(), "Export failed: {:?}", export_result.err());
+    let export_result =
+        handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
+    assert!(
+        export_result.is_ok(),
+        "Export failed: {:?}",
+        export_result.err()
+    );
 
     let content = fs::read_to_string(output_path).expect("Failed to read exported file");
     for (name, _) in &vehicles {
@@ -58,7 +63,10 @@ fn test_multi_vehicle_scenario() {
     // Cleanup
     fs::remove_file(output_path).ok();
 
-    println!("✓ Multi-vehicle test passed: {} vehicles created and exported", vehicles.len());
+    println!(
+        "✓ Multi-vehicle test passed: {} vehicles created and exported",
+        vehicles.len()
+    );
 }
 
 /// Test 2: Many actions on a single vehicle (10+ actions)
@@ -100,7 +108,7 @@ fn test_many_actions_single_vehicle() {
     handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string()).unwrap();
 
     let content = fs::read_to_string(output_path).unwrap();
-    
+
     // Count story elements
     let story_count = content.matches("<Story").count();
     assert!(
@@ -190,17 +198,27 @@ fn test_mixed_actions_same_entity() {
 
     // Export and verify mixed actions
     let output_path = "/tmp/mixed_actions_test.xosc";
-    let export_result = handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
-    assert!(export_result.is_ok(), "Export failed: {:?}", export_result.err());
+    let export_result =
+        handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
+    assert!(
+        export_result.is_ok(),
+        "Export failed: {:?}",
+        export_result.err()
+    );
 
     let content = fs::read_to_string(output_path).expect("Failed to read exported file");
-    
+
     assert!(content.contains("SpeedAction"), "Missing SpeedAction");
-    assert!(content.contains("LaneChangeAction"), "Missing LaneChangeAction");
+    assert!(
+        content.contains("LaneChangeAction"),
+        "Missing LaneChangeAction"
+    );
     assert!(content.contains("TeleportAction"), "Missing TeleportAction");
 
-    println!("✓ Mixed actions test passed: Position, Speed, and Lane Change actions on same vehicle");
-    
+    println!(
+        "✓ Mixed actions test passed: Position, Speed, and Lane Change actions on same vehicle"
+    );
+
     // Cleanup
     fs::remove_file(output_path).ok();
 }
@@ -256,7 +274,7 @@ fn test_multiple_stories_different_vehicles() {
     handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string()).unwrap();
 
     let content = fs::read_to_string(output_path).unwrap();
-    
+
     for (story_name, _) in &stories {
         assert!(
             content.contains(story_name),
@@ -316,31 +334,49 @@ fn test_export_validate_xml_structure() {
 
     // Export
     let output_path = "/tmp/xml_validation_test.xosc";
-    let export_result = handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
-    assert!(export_result.is_ok(), "Export failed: {:?}", export_result.err());
+    let export_result =
+        handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
+    assert!(
+        export_result.is_ok(),
+        "Export failed: {:?}",
+        export_result.err()
+    );
 
     // Validate XML structure
     let content = fs::read_to_string(output_path).expect("Failed to read exported file");
-    
+
     // Check for required OpenSCENARIO elements
     assert!(content.starts_with("<?xml"), "Missing XML declaration");
-    assert!(content.contains("<OpenSCENARIO"), "Missing OpenSCENARIO root (looking for opening tag)");
+    assert!(
+        content.contains("<OpenSCENARIO"),
+        "Missing OpenSCENARIO root (looking for opening tag)"
+    );
     assert!(content.contains("<FileHeader"), "Missing FileHeader");
     assert!(content.contains("<Entities>"), "Missing Entities section");
     assert!(content.contains("<Storyboard>"), "Missing Storyboard");
     assert!(content.contains("</OpenSCENARIO>"), "Missing closing tag");
-    
+
     // Check for proper nesting
-    let open_pos = content.find("<OpenSCENARIO").expect("OpenSCENARIO opening tag not found");
-    let close_pos = content.find("</OpenSCENARIO>").expect("OpenSCENARIO closing tag not found");
+    let open_pos = content
+        .find("<OpenSCENARIO")
+        .expect("OpenSCENARIO opening tag not found");
+    let close_pos = content
+        .find("</OpenSCENARIO>")
+        .expect("OpenSCENARIO closing tag not found");
     assert!(open_pos < close_pos, "Improper tag nesting");
 
     // Check version attribute
-    assert!(content.contains("revMajor=\"1\""), "Missing or incorrect major version");
-    assert!(content.contains("revMinor=\"2\""), "Missing or incorrect minor version");
+    assert!(
+        content.contains("revMajor=\"1\""),
+        "Missing or incorrect major version"
+    );
+    assert!(
+        content.contains("revMinor=\"2\""),
+        "Missing or incorrect minor version"
+    );
 
     println!("✓ XML validation test passed: Valid OpenSCENARIO structure confirmed");
-    
+
     // Cleanup
     fs::remove_file(output_path).ok();
 }
@@ -394,8 +430,13 @@ fn test_round_trip_integrity() {
 
     // Export to XML
     let output_path = "/tmp/round_trip_test.xosc";
-    let export_result = handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
-    assert!(export_result.is_ok(), "Export failed: {:?}", export_result.err());
+    let export_result =
+        handle_export_xml(state.clone(), scenario_id.clone(), output_path.to_string());
+    assert!(
+        export_result.is_ok(),
+        "Export failed: {:?}",
+        export_result.err()
+    );
 
     // Read exported content
     let exported_content = fs::read_to_string(output_path).expect("Failed to read exported file");
@@ -418,16 +459,23 @@ fn test_round_trip_integrity() {
     assert!(exported_content.contains("200"), "X position not preserved");
     assert!(exported_content.contains("100"), "Y position not preserved");
     assert!(exported_content.contains("45"), "Speed value not preserved");
-    assert!(exported_content.contains("4.5"), "Transition time not preserved");
+    assert!(
+        exported_content.contains("4.5"),
+        "Transition time not preserved"
+    );
 
     // Verify XML is well-formed (basic check - look for opening tag which may have attributes)
     let open_tags = exported_content.matches("<OpenSCENARIO").count();
     let close_tags = exported_content.matches("</OpenSCENARIO>").count();
-    assert_eq!(open_tags, close_tags, "Mismatched OpenSCENARIO tags (open: {}, close: {})", open_tags, close_tags);
+    assert_eq!(
+        open_tags, close_tags,
+        "Mismatched OpenSCENARIO tags (open: {}, close: {})",
+        open_tags, close_tags
+    );
     assert!(open_tags > 0, "No OpenSCENARIO tags found at all!");
 
     println!("✓ Round-trip test passed: All data preserved in export cycle");
-    
+
     // Cleanup
     fs::remove_file(output_path).ok();
 }
@@ -437,12 +485,9 @@ fn test_round_trip_integrity() {
 fn test_large_scenario_stress() {
     let state = Arc::new(Mutex::new(ServerState::new()));
 
-    let scenario_id = handle_create_scenario(
-        state.clone(),
-        "stress_test".to_string(),
-        "1.2".to_string(),
-    )
-    .unwrap();
+    let scenario_id =
+        handle_create_scenario(state.clone(), "stress_test".to_string(), "1.2".to_string())
+            .unwrap();
 
     // Add 10 vehicles
     for i in 0..10 {
@@ -475,7 +520,7 @@ fn test_large_scenario_stress() {
     assert!(result.is_ok(), "Failed to export large scenario");
 
     let content = fs::read_to_string(output_path).unwrap();
-    
+
     // Verify all vehicles present
     for i in 0..10 {
         assert!(
@@ -494,7 +539,10 @@ fn test_large_scenario_stress() {
     );
 
     let file_size = content.len();
-    println!("✓ Stress test passed: 10 vehicles, 50 stories, {} bytes", file_size);
+    println!(
+        "✓ Stress test passed: 10 vehicles, 50 stories, {} bytes",
+        file_size
+    );
 
     // Cleanup
     fs::remove_file(output_path).ok();

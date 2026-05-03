@@ -1,12 +1,12 @@
 /// Comprehensive Error Handling & Edge Case Tests
 /// Tests for invalid inputs, malformed data, and boundary conditions
 use anyhow::Result;
+use mcp_sdk::types::{CallToolRequest, ToolResponseContent};
 use openscenario_mcp::handlers::*;
 use openscenario_mcp::server::{OpenScenarioServer, ServerState};
-use mcp_sdk::types::{CallToolRequest, ToolResponseContent};
 use serde_json::{json, Value};
-use std::sync::{Arc, Mutex};
 use std::fs;
+use std::sync::{Arc, Mutex};
 
 // ========== HELPER FUNCTIONS ==========
 
@@ -120,7 +120,7 @@ fn test_no_arguments() {
 #[test]
 fn test_nonexistent_scenario_id() {
     let state = create_test_state();
-    
+
     let result = handle_add_vehicle(
         state,
         "nonexistent_scenario_id".to_string(),
@@ -137,7 +137,7 @@ fn test_nonexistent_scenario_id() {
 #[test]
 fn test_empty_scenario_name() {
     let state = create_test_state();
-    
+
     let result = handle_create_scenario(
         state,
         "".to_string(), // Empty name
@@ -151,7 +151,7 @@ fn test_empty_scenario_name() {
 #[test]
 fn test_invalid_version_string() {
     let state = create_test_state();
-    
+
     let result = handle_create_scenario(
         state,
         "test".to_string(),
@@ -167,7 +167,7 @@ fn test_invalid_version_string() {
 #[test]
 fn test_malformed_version_string() {
     let state = create_test_state();
-    
+
     let result = handle_create_scenario(
         state,
         "test".to_string(),
@@ -183,7 +183,7 @@ fn test_malformed_version_string() {
 fn test_nan_position_x() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     // Add vehicle first
     handle_add_vehicle(
         state.clone(),
@@ -191,7 +191,8 @@ fn test_nan_position_x() {
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_set_position(
         state,
@@ -212,14 +213,15 @@ fn test_nan_position_x() {
 fn test_infinity_position_value() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     handle_add_vehicle(
         state.clone(),
         scenario_id.clone(),
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_set_position(
         state,
@@ -238,14 +240,15 @@ fn test_infinity_position_value() {
 fn test_negative_infinity_position() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     handle_add_vehicle(
         state.clone(),
         scenario_id.clone(),
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_set_position(
         state,
@@ -264,20 +267,21 @@ fn test_negative_infinity_position() {
 fn test_extremely_large_position_values() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     handle_add_vehicle(
         state.clone(),
         scenario_id.clone(),
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_set_position(
         state,
         scenario_id,
         "car1".to_string(),
-        1e100, // Very large
+        1e100,  // Very large
         -1e100, // Very large negative
         0.0,
         0.0,
@@ -292,14 +296,15 @@ fn test_extremely_large_position_values() {
 fn test_negative_duration() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     handle_add_vehicle(
         state.clone(),
         scenario_id.clone(),
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_add_speed_action(
         state,
@@ -318,14 +323,15 @@ fn test_negative_duration() {
 fn test_zero_duration() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     handle_add_vehicle(
         state.clone(),
         scenario_id.clone(),
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_add_speed_action(
         state,
@@ -343,14 +349,15 @@ fn test_zero_duration() {
 fn test_negative_speed() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     handle_add_vehicle(
         state.clone(),
         scenario_id.clone(),
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_add_speed_action(
         state,
@@ -411,7 +418,8 @@ fn test_duplicate_vehicle_name() {
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Try to add same vehicle again
     let result = handle_add_vehicle(
@@ -517,7 +525,8 @@ fn test_validation_is_xsd_only() {
         "story1".to_string(),
         50.0,
         5.0,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Validation is XSD-only, so it may pass even with semantic errors
     // This documents the current behavior
@@ -563,10 +572,7 @@ fn test_export_nonexistent_scenario() {
 fn test_validate_nonexistent_scenario() {
     let state = create_test_state();
 
-    let result = handle_validate_scenario(
-        state,
-        "nonexistent_id".to_string(),
-    );
+    let result = handle_validate_scenario(state, "nonexistent_id".to_string());
 
     assert!(result.is_err());
     let err = result.unwrap_err();
@@ -596,11 +602,7 @@ fn test_export_to_readonly_location() {
     let scenario_id = create_test_scenario(state.clone()).unwrap();
 
     // Try to write to /proc which is typically read-only
-    let result = handle_export_xml(
-        state,
-        scenario_id,
-        "/proc/test.xosc".to_string(),
-    );
+    let result = handle_export_xml(state, scenario_id, "/proc/test.xosc".to_string());
 
     // Should fail with permission/IO error
     let _ = result;
@@ -640,12 +642,8 @@ fn test_empty_tool_name() {
 fn test_very_long_scenario_name() {
     let state = create_test_state();
     let long_name = "a".repeat(10000);
-    
-    let result = handle_create_scenario(
-        state,
-        long_name.clone(),
-        "1.2".to_string(),
-    );
+
+    let result = handle_create_scenario(state, long_name.clone(), "1.2".to_string());
 
     // Should handle without panic
     let _ = result;
@@ -654,12 +652,8 @@ fn test_very_long_scenario_name() {
 #[test]
 fn test_special_characters_in_name() {
     let state = create_test_state();
-    
-    let result = handle_create_scenario(
-        state,
-        "test<>\"'&scenario".to_string(),
-        "1.2".to_string(),
-    );
+
+    let result = handle_create_scenario(state, "test<>\"'&scenario".to_string(), "1.2".to_string());
 
     // Should succeed or fail gracefully
     let _ = result;
@@ -669,7 +663,7 @@ fn test_special_characters_in_name() {
 fn test_unicode_in_names() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     let result = handle_add_vehicle(
         state,
         scenario_id,
@@ -685,14 +679,15 @@ fn test_unicode_in_names() {
 fn test_extreme_lane_offset() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     handle_add_vehicle(
         state.clone(),
         scenario_id.clone(),
         "car1".to_string(),
         "Car".to_string(),
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     let result = handle_add_lane_change_action(
         state,
@@ -712,14 +707,11 @@ fn test_extreme_lane_offset() {
 fn test_complete_error_handling_flow() {
     // Test that multiple errors in sequence don't cause state corruption
     let state = create_test_state();
-    
+
     // 1. Create scenario successfully
-    let scenario_id = handle_create_scenario(
-        state.clone(),
-        "test".to_string(),
-        "1.2".to_string(),
-    ).unwrap();
-    
+    let scenario_id =
+        handle_create_scenario(state.clone(), "test".to_string(), "1.2".to_string()).unwrap();
+
     // 2. Try invalid operation
     let _ = handle_add_vehicle(
         state.clone(),
@@ -728,7 +720,7 @@ fn test_complete_error_handling_flow() {
         "Car".to_string(),
         None,
     );
-    
+
     // 3. Valid operation should still work
     let result = handle_add_vehicle(
         state.clone(),
@@ -738,7 +730,7 @@ fn test_complete_error_handling_flow() {
         None,
     );
     assert!(result.is_ok());
-    
+
     // 4. Try duplicate
     let result = handle_add_vehicle(
         state.clone(),
@@ -748,7 +740,7 @@ fn test_complete_error_handling_flow() {
         None,
     );
     assert!(result.is_err());
-    
+
     // 5. Different vehicle should still work
     let result = handle_add_vehicle(
         state.clone(),
@@ -764,7 +756,7 @@ fn test_complete_error_handling_flow() {
 fn test_no_panic_on_mutex_operations() {
     let state = create_test_state();
     let scenario_id = create_test_scenario(state.clone()).unwrap();
-    
+
     // Perform multiple concurrent-ish operations
     // This is single-threaded but tests mutex lock/unlock cycles
     for i in 0..100 {
@@ -776,7 +768,7 @@ fn test_no_panic_on_mutex_operations() {
             None,
         );
     }
-    
+
     // Should not panic or deadlock
     assert!(true);
 }

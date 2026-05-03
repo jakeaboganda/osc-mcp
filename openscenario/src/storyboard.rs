@@ -32,7 +32,7 @@ impl Act {
             start_trigger: None,
         }
     }
-    
+
     pub fn set_start_trigger(&mut self, trigger: Trigger) {
         self.start_trigger = Some(trigger);
     }
@@ -85,7 +85,7 @@ impl Event {
             start_trigger: None,
         }
     }
-    
+
     pub fn set_start_trigger(&mut self, trigger: Trigger) {
         self.start_trigger = Some(trigger);
     }
@@ -250,7 +250,10 @@ impl Condition {
             name: format!("SimTime_{}", seconds),
             delay: 0.0,
             condition_edge: ConditionEdge::None,
-            kind: ConditionKind::ByValue(ByValueCondition::SimulationTime { value: seconds, rule }),
+            kind: ConditionKind::ByValue(ByValueCondition::SimulationTime {
+                value: seconds,
+                rule,
+            }),
         }
     }
 

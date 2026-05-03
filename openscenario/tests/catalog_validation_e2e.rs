@@ -1,7 +1,7 @@
 use openscenario::catalog::{Catalog, CatalogType};
-use openscenario::{OpenScenarioVersion, Scenario};
-use openscenario::entities::{Entity, CatalogReference, VehicleParams};
+use openscenario::entities::{CatalogReference, Entity, VehicleParams};
 use openscenario::validation::XsdValidator;
+use openscenario::{OpenScenarioVersion, Scenario};
 use std::fs;
 use tempfile::TempDir;
 
@@ -10,7 +10,7 @@ fn test_end_to_end_catalog_usage() {
     // Setup: Create a vehicle catalog
     let temp_dir = TempDir::new().unwrap();
     let catalog_path = temp_dir.path().join("VehicleCatalog.xosc");
-    
+
     let catalog_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
 <OpenSCENARIO>
   <CatalogDefinition>
@@ -28,31 +28,33 @@ fn test_end_to_end_catalog_usage() {
     </Catalog>
   </CatalogDefinition>
 </OpenSCENARIO>"#;
-    
+
     fs::write(&catalog_path, catalog_xml).unwrap();
-    
+
     // Step 1: Load the catalog
     let catalog = Catalog::from_file(&catalog_path).unwrap();
     assert_eq!(catalog.catalog_type(), CatalogType::Vehicle);
-    
+
     // Step 2: Find the vehicle in the catalog
     let ferrari_entry = catalog.find("ferrari").unwrap();
     assert_eq!(ferrari_entry.name(), "ferrari");
-    
+
     // Step 3: Create a scenario and add vehicle from catalog
     let mut scenario = Scenario::new(OpenScenarioVersion::V1_2);
-    
+
     match ferrari_entry.entity() {
         Entity::Vehicle(vehicle) => {
-            scenario.add_vehicle("hero_car".to_string(), vehicle.params.clone()).unwrap();
+            scenario
+                .add_vehicle("hero_car".to_string(), vehicle.params.clone())
+                .unwrap();
         }
         _ => panic!("Expected vehicle entity"),
     }
-    
+
     // Step 4: Export and validate
     let xml_output = scenario.to_xml().unwrap();
     assert!(xml_output.contains("hero_car"));
-    
+
     // Validate the generated scenario
     let validator = XsdValidator::new("1.2");
     let report = validator.validate(&xml_output);
@@ -63,7 +65,7 @@ fn test_end_to_end_catalog_usage() {
 fn test_catalog_reference_in_scenario() {
     // Create a scenario with a catalog reference
     let mut scenario = Scenario::new(OpenScenarioVersion::V1_2);
-    
+
     let params = VehicleParams {
         catalog: Some(CatalogReference {
             path: "./catalogs/VehicleCatalog.xosc".to_string(),
@@ -72,12 +74,12 @@ fn test_catalog_reference_in_scenario() {
         vehicle_category: openscenario::entities::VehicleCategory::Car,
         properties: None,
     };
-    
+
     scenario.add_vehicle("car1".to_string(), params).unwrap();
-    
+
     // Export to XML
     let xml = scenario.to_xml().unwrap();
-    
+
     // Verify catalog reference is present in XML
     assert!(xml.contains("CatalogReference"));
     // The actual catalog reference format may vary, so just check that entity name is there
@@ -87,7 +89,7 @@ fn test_catalog_reference_in_scenario() {
 #[test]
 fn test_multiple_catalogs() {
     let temp_dir = TempDir::new().unwrap();
-    
+
     // Create vehicle catalog
     let vehicle_catalog_path = temp_dir.path().join("VehicleCatalog.xosc");
     let vehicle_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -104,7 +106,7 @@ fn test_multiple_catalogs() {
   </VehicleCatalog>
 </OpenSCENARIO>"#;
     fs::write(&vehicle_catalog_path, vehicle_xml).unwrap();
-    
+
     // Create pedestrian catalog
     let ped_catalog_path = temp_dir.path().join("PedestrianCatalog.xosc");
     let ped_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -121,14 +123,14 @@ fn test_multiple_catalogs() {
   </PedestrianCatalog>
 </OpenSCENARIO>"#;
     fs::write(&ped_catalog_path, ped_xml).unwrap();
-    
+
     // Load both catalogs
     let vehicle_catalog = Catalog::from_file(&vehicle_catalog_path).unwrap();
     let ped_catalog = Catalog::from_file(&ped_catalog_path).unwrap();
-    
+
     assert_eq!(vehicle_catalog.catalog_type(), CatalogType::Vehicle);
     assert_eq!(ped_catalog.catalog_type(), CatalogType::Pedestrian);
-    
+
     assert!(vehicle_catalog.find("truck").is_some());
     assert!(ped_catalog.find("walker").is_some());
 }
@@ -136,7 +138,7 @@ fn test_multiple_catalogs() {
 #[test]
 fn test_validation_error_messages() {
     // Test that validation provides helpful error messages
-    
+
     // Test 1: Malformed XML
     let validator = XsdValidator::new("1.0");
     let malformed = "<OpenSCENARIO><FileHeader></OpenSCENARIO>";
@@ -144,7 +146,7 @@ fn test_validation_error_messages() {
     assert!(!report.valid);
     assert!(!report.errors.is_empty());
     assert!(report.errors[0].contains("parsing error") || report.errors[0].contains("XML"));
-    
+
     // Test 2: Version mismatch
     let wrong_version = r#"<?xml version="1.0"?>
 <OpenSCENARIO>
@@ -153,7 +155,7 @@ fn test_validation_error_messages() {
     let report = validator.validate(wrong_version);
     assert!(!report.valid);
     assert!(report.errors.iter().any(|e| e.contains("Version mismatch")));
-    
+
     // Test 3: Missing version attributes
     let no_version = r#"<?xml version="1.0"?>
 <OpenSCENARIO>
@@ -181,12 +183,12 @@ fn test_wrong_catalog_type() {
     </Vehicle>
   </VehicleCatalog>
 </OpenSCENARIO>"#;
-    
+
     let catalog = Catalog::from_xml(vehicle_xml).unwrap();
-    
+
     // Verify it's detected as a vehicle catalog
     assert_eq!(catalog.catalog_type(), CatalogType::Vehicle);
-    
+
     // Verify we can't accidentally use it as a pedestrian
     match catalog.find("sedan").unwrap().entity() {
         Entity::Vehicle(_) => {

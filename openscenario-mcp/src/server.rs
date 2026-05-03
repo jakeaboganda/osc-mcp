@@ -1,7 +1,7 @@
 use crate::handlers::{
     handle_add_lane_change_action, handle_add_speed_action, handle_add_vehicle,
-    handle_create_scenario, handle_export_xml, handle_set_position, handle_set_stop_time,
-    handle_set_stop_on_element, handle_validate_scenario,
+    handle_create_scenario, handle_export_xml, handle_set_position, handle_set_stop_on_element,
+    handle_set_stop_time, handle_validate_scenario,
 };
 use anyhow::{anyhow, Result};
 use mcp_sdk::types::{
@@ -229,9 +229,7 @@ impl OpenScenarioServer {
             },
             ToolDefinition {
                 name: "set_stop_time".to_string(),
-                description: Some(
-                    "Set a time-based stop trigger for the scenario".to_string(),
-                ),
+                description: Some("Set a time-based stop trigger for the scenario".to_string()),
                 input_schema: json!({
                     "type": "object",
                     "properties": {
@@ -516,11 +514,8 @@ impl OpenScenarioServer {
                     .and_then(Value::as_f64)
                     .ok_or_else(|| anyhow!("Missing or invalid 'seconds' parameter"))?;
 
-                let result = handle_set_stop_time(
-                    GLOBAL_STATE.clone(),
-                    scenario_id.to_string(),
-                    seconds,
-                )?;
+                let result =
+                    handle_set_stop_time(GLOBAL_STATE.clone(), scenario_id.to_string(), seconds)?;
 
                 Ok(CallToolResponse {
                     content: vec![ToolResponseContent::Text { text: result }],

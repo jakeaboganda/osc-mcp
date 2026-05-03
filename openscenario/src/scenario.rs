@@ -243,13 +243,13 @@ impl Scenario {
                 context: format!("Act in story '{}'", story_name),
             })?;
 
-        let mg = act
-            .maneuver_groups
-            .get_mut(&mg_name)
-            .ok_or_else(|| ScenarioError::EntityNotFound {
-                entity: mg_name.clone(),
-                context: format!("ManeuverGroup in act '{}'", act_name),
-            })?;
+        let mg =
+            act.maneuver_groups
+                .get_mut(&mg_name)
+                .ok_or_else(|| ScenarioError::EntityNotFound {
+                    entity: mg_name.clone(),
+                    context: format!("ManeuverGroup in act '{}'", act_name),
+                })?;
 
         let maneuver = mg
             .maneuvers
@@ -711,7 +711,8 @@ impl Scenario {
     /// Set a simple time-based stop trigger
     pub fn set_stop_time(&mut self, seconds: f64) {
         use crate::storyboard::StopTrigger;
-        self.storyboard.set_stop_trigger(StopTrigger::simulation_time(seconds));
+        self.storyboard
+            .set_stop_trigger(StopTrigger::simulation_time(seconds));
     }
 
     /// Set a stop trigger based on storyboard element state
@@ -723,11 +724,12 @@ impl Scenario {
         delay: f64,
     ) {
         use crate::storyboard::StopTrigger;
-        self.storyboard.set_stop_trigger(StopTrigger::storyboard_element_state(
-            element_type,
-            element_ref,
-            state,
-            delay,
-        ));
+        self.storyboard
+            .set_stop_trigger(StopTrigger::storyboard_element_state(
+                element_type,
+                element_ref,
+                state,
+                delay,
+            ));
     }
 }

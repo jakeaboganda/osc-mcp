@@ -102,7 +102,9 @@ impl Scenario {
                     veh_elem.push_attribute(("name", v.name.as_str()));
                     veh_elem.push_attribute((
                         "vehicleCategory",
-                        format!("{:?}", v.params.vehicle_category).to_lowercase().as_str(),
+                        format!("{:?}", v.params.vehicle_category)
+                            .to_lowercase()
+                            .as_str(),
                     ));
                     if let Some(props) = &v.params.properties {
                         if let Some(model) = &props.model3d {
@@ -493,7 +495,7 @@ impl Scenario {
         let mut cond_elem = BytesStart::new("Condition");
         cond_elem.push_attribute(("name", condition.name.as_str()));
         cond_elem.push_attribute(("delay", condition.delay.to_string().as_str()));
-        
+
         // Convert ConditionEdge enum to XML string
         let edge_str = match condition.condition_edge {
             crate::storyboard::ConditionEdge::None => "none",
@@ -502,19 +504,19 @@ impl Scenario {
             crate::storyboard::ConditionEdge::RisingOrFalling => "risingOrFalling",
         };
         cond_elem.push_attribute(("conditionEdge", edge_str));
-        
+
         writer.write_event(XmlEvent::Start(cond_elem))?;
-        
+
         // Write condition kind (currently only ByValue supported)
         match &condition.kind {
             crate::storyboard::ConditionKind::ByValue(by_value) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
-                
+
                 match by_value {
                     crate::storyboard::ByValueCondition::SimulationTime { value, rule } => {
                         let mut sim_time = BytesStart::new("SimulationTimeCondition");
                         sim_time.push_attribute(("value", value.to_string().as_str()));
-                        
+
                         let rule_str = match rule {
                             crate::storyboard::ComparisonRule::GreaterOrEqual => "greaterOrEqual",
                             crate::storyboard::ComparisonRule::GreaterThan => "greaterThan",
@@ -524,7 +526,7 @@ impl Scenario {
                             crate::storyboard::ComparisonRule::NotEqualTo => "notEqualTo",
                         };
                         sim_time.push_attribute(("rule", rule_str));
-                        
+
                         writer.write_event(XmlEvent::Empty(sim_time))?;
                     }
                     crate::storyboard::ByValueCondition::StoryboardElementState {
@@ -539,11 +541,11 @@ impl Scenario {
                         writer.write_event(XmlEvent::Empty(elem_state))?;
                     }
                 }
-                
+
                 writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
             }
         }
-        
+
         writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
         Ok(())
     }

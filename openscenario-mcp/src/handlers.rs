@@ -156,11 +156,14 @@ pub fn handle_add_speed_action(
     let _ = scenario.add_act(&story_name, &act_name);
     let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
     let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
-    
+
     // Ensure actor is added (try multiple times if needed)
     if let Err(e) = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone()) {
         // If it failed, log but continue - the actor might already exist
-        eprintln!("Note: add_actor returned error (may be ok if already exists): {}", e);
+        eprintln!(
+            "Note: add_actor returned error (may be ok if already exists): {}",
+            e
+        );
     }
 
     // Add speed action
@@ -210,10 +213,13 @@ pub fn handle_add_lane_change_action(
     let _ = scenario.add_act(&story_name, &act_name);
     let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
     let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
-    
+
     // Ensure actor is added
     if let Err(e) = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone()) {
-        eprintln!("Note: add_actor returned error (may be ok if already exists): {}", e);
+        eprintln!(
+            "Note: add_actor returned error (may be ok if already exists): {}",
+            e
+        );
     }
 
     // Add lane change action
@@ -322,6 +328,14 @@ pub fn handle_set_stop_on_element(
         .get_mut(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
 
-    scenario.set_stop_on_element_state(element_type.clone(), element_ref.clone(), state_name.clone(), delay);
-    Ok(format!("Set stop trigger on {} element '{}' reaching state '{}'", element_type, element_ref, state_name))
+    scenario.set_stop_on_element_state(
+        element_type.clone(),
+        element_ref.clone(),
+        state_name.clone(),
+        delay,
+    );
+    Ok(format!(
+        "Set stop trigger on {} element '{}' reaching state '{}'",
+        element_type, element_ref, state_name
+    ))
 }
