@@ -177,6 +177,38 @@ impl Scenario {
         Ok(())
     }
 
+    pub fn set_act_start_trigger(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        trigger: crate::storyboard::Trigger,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        act.set_start_trigger(trigger);
+        Ok(())
+    }
+
     pub fn add_maneuver_group(
         &mut self,
         story: impl Into<String>,

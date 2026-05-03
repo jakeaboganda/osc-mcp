@@ -1,6 +1,6 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
 use openscenario::position::Orientation;
-use openscenario::storyboard::TransitionShape;
+use openscenario::storyboard::{TransitionShape, Trigger, ConditionGroup, Condition, ComparisonRule};
 use openscenario::{OpenScenarioVersion, Position, Scenario};
 
 #[test]
@@ -223,4 +223,40 @@ fn test_xml_export_lane_change_with_actor() {
     // Verify entityRef is set to the actor, not empty
     assert!(xml.contains("entityRef=\"ego\""));
     assert!(xml.contains("value=\"1\""));
+}
+
+#[test]
+fn test_act_custom_start_trigger_xml() {
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    scenario.add_story("MyStory").unwrap();
+    scenario.add_act("MyStory", "MyAct").unwrap();
+    
+    // Create custom trigger: start at t=10
+    let trigger = Trigger::new(
+        ConditionGroup::new(vec![
+            Condition::simulation_time(10.0, ComparisonRule::GreaterOrEqual)
+        ])
+    );
+    
+    scenario.set_act_start_trigger("MyStory", "MyAct", trigger).unwrap();
+    
+    let xml = scenario.to_xml().expect("XML generation failed");
+    
+    // Should contain SimulationTimeCondition with value=10
+    assert!(xml.contains("<SimulationTimeCondition"));
+    assert!(xml.contains("value=\"10\""));
+    assert!(xml.contains("rule=\"greaterOrEqual\""));
+}
+
+#[test]
+fn test_act_default_start_trigger_xml() {
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    scenario.add_story("MyStory").unwrap();
+    scenario.add_act("MyStory", "MyAct").unwrap(); // No trigger set
+    
+    let xml = scenario.to_xml().expect("XML generation failed");
+    
+    // Should contain default t=0 trigger
+    assert!(xml.contains("<SimulationTimeCondition"));
+    assert!(xml.contains("value=\"0\""));
 }

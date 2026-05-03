@@ -459,6 +459,95 @@ impl Scenario {
         Ok(())
     }
 
+    fn write_trigger<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        trigger: &crate::storyboard::Trigger,
+    ) -> Result<()> {
+        writer.write_event(XmlEvent::Start(BytesStart::new("StartTrigger")))?;
+        for group in &trigger.condition_groups {
+            self.write_condition_group(writer, group)?;
+        }
+        writer.write_event(XmlEvent::End(BytesEnd::new("StartTrigger")))?;
+        Ok(())
+    }
+
+    fn write_condition_group<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        group: &crate::storyboard::ConditionGroup,
+    ) -> Result<()> {
+        writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
+        for condition in &group.conditions {
+            self.write_condition(writer, condition)?;
+        }
+        writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
+        Ok(())
+    }
+
+    fn write_condition<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+        condition: &crate::storyboard::Condition,
+    ) -> Result<()> {
+        let mut cond_elem = BytesStart::new("Condition");
+        cond_elem.push_attribute(("name", condition.name.as_str()));
+        cond_elem.push_attribute(("delay", condition.delay.to_string().as_str()));
+        
+        // Convert ConditionEdge enum to XML string
+        let edge_str = match condition.condition_edge {
+            crate::storyboard::ConditionEdge::None => "none",
+            crate::storyboard::ConditionEdge::Rising => "rising",
+            crate::storyboard::ConditionEdge::Falling => "falling",
+            crate::storyboard::ConditionEdge::RisingOrFalling => "risingOrFalling",
+        };
+        cond_elem.push_attribute(("conditionEdge", edge_str));
+        
+        writer.write_event(XmlEvent::Start(cond_elem))?;
+        
+        // Write condition kind (currently only ByValue supported)
+        match &condition.kind {
+            crate::storyboard::ConditionKind::ByValue(by_value) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
+                
+                match by_value {
+                    crate::storyboard::ByValueCondition::SimulationTime { value, rule } => {
+                        let mut sim_time = BytesStart::new("SimulationTimeCondition");
+                        sim_time.push_attribute(("value", value.to_string().as_str()));
+                        
+                        let rule_str = match rule {
+                            crate::storyboard::ComparisonRule::GreaterOrEqual => "greaterOrEqual",
+                            crate::storyboard::ComparisonRule::GreaterThan => "greaterThan",
+                            crate::storyboard::ComparisonRule::LessOrEqual => "lessOrEqual",
+                            crate::storyboard::ComparisonRule::LessThan => "lessThan",
+                            crate::storyboard::ComparisonRule::EqualTo => "equalTo",
+                            crate::storyboard::ComparisonRule::NotEqualTo => "notEqualTo",
+                        };
+                        sim_time.push_attribute(("rule", rule_str));
+                        
+                        writer.write_event(XmlEvent::Empty(sim_time))?;
+                    }
+                    crate::storyboard::ByValueCondition::StoryboardElementState {
+                        element_type,
+                        element_ref,
+                        state,
+                    } => {
+                        let mut elem_state = BytesStart::new("StoryboardElementStateCondition");
+                        elem_state.push_attribute(("storyboardElementType", element_type.as_str()));
+                        elem_state.push_attribute(("storyboardElementRef", element_ref.as_str()));
+                        elem_state.push_attribute(("state", state.as_str()));
+                        writer.write_event(XmlEvent::Empty(elem_state))?;
+                    }
+                }
+                
+                writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
+            }
+        }
+        
+        writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
+        Ok(())
+    }
+
     fn write_act<W: std::io::Write>(&self, writer: &mut Writer<W>, act: &Act) -> Result<()> {
         let mut elem = BytesStart::new("Act");
         elem.push_attribute(("name", act.name.as_str()));
@@ -468,23 +557,29 @@ impl Scenario {
             self.write_maneuver_group(writer, mg)?;
         }
 
-        // StartTrigger (default: start immediately at t=0)
-        writer.write_event(XmlEvent::Start(BytesStart::new("StartTrigger")))?;
-        writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
-        let mut cond = BytesStart::new("Condition");
-        cond.push_attribute(("name", "ActStartCondition"));
-        cond.push_attribute(("delay", "0"));
-        cond.push_attribute(("conditionEdge", "none"));
-        writer.write_event(XmlEvent::Start(cond))?;
-        writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
-        let mut sim_time = BytesStart::new("SimulationTimeCondition");
-        sim_time.push_attribute(("value", "0"));
-        sim_time.push_attribute(("rule", "greaterOrEqual"));
-        writer.write_event(XmlEvent::Empty(sim_time))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("StartTrigger")))?;
+        // StartTrigger
+        if let Some(trigger) = &act.start_trigger {
+            // Use custom trigger if set
+            self.write_trigger(writer, trigger)?;
+        } else {
+            // Default: start immediately at t=0
+            writer.write_event(XmlEvent::Start(BytesStart::new("StartTrigger")))?;
+            writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
+            let mut cond = BytesStart::new("Condition");
+            cond.push_attribute(("name", "ActStartCondition"));
+            cond.push_attribute(("delay", "0"));
+            cond.push_attribute(("conditionEdge", "none"));
+            writer.write_event(XmlEvent::Start(cond))?;
+            writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
+            let mut sim_time = BytesStart::new("SimulationTimeCondition");
+            sim_time.push_attribute(("value", "0"));
+            sim_time.push_attribute(("rule", "greaterOrEqual"));
+            writer.write_event(XmlEvent::Empty(sim_time))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("StartTrigger")))?;
+        }
 
         writer.write_event(XmlEvent::End(BytesEnd::new("Act")))?;
         Ok(())
