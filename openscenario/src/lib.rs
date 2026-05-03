@@ -16,6 +16,9 @@ pub use entities::{Entity, MiscObjectParams, PedestrianParams, VehicleParams};
 pub use error::{Result, ScenarioError};
 pub use position::Position;
 pub use scenario::Scenario;
-pub use storyboard::{Action, LaneChangeAction, SpeedAction, Storyboard, TransitionShape};
+pub use storyboard::{
+    Act, Action, ByValueCondition, ComparisonRule, Condition, ConditionEdge, ConditionGroup,
+    ConditionKind, Event, LaneChangeAction, SpeedAction, Storyboard, TransitionShape, Trigger,
+};
 pub use validation::{ValidationReport, XsdValidator};
 pub use version::OpenScenarioVersion;
