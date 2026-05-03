@@ -116,18 +116,66 @@ pub enum TransitionShape {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Storyboard {
     pub stories: HashMap<String, Story>,
+    pub stop_trigger: Option<StopTrigger>,
 }
 
 impl Storyboard {
     pub fn new() -> Self {
         Self {
             stories: HashMap::new(),
+            stop_trigger: None,
         }
+    }
+
+    pub fn set_stop_trigger(&mut self, trigger: StopTrigger) {
+        self.stop_trigger = Some(trigger);
     }
 }
 
 impl Default for Storyboard {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StopTrigger {
+    pub condition: StopCondition,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum StopCondition {
+    /// Stop after a simulation time duration
+    SimulationTime { seconds: f64 },
+    /// Stop when a story element reaches a specific state
+    StoryboardElementState {
+        element_type: String,
+        element_ref: String,
+        state: String,
+        delay: f64,
+    },
+}
+
+impl StopTrigger {
+    pub fn simulation_time(seconds: f64) -> Self {
+        Self {
+            condition: StopCondition::SimulationTime { seconds },
+        }
+    }
+
+    pub fn storyboard_element_state(
+        element_type: impl Into<String>,
+        element_ref: impl Into<String>,
+        state: impl Into<String>,
+        delay: f64,
+    ) -> Self {
+        Self {
+            condition: StopCondition::StoryboardElementState {
+                element_type: element_type.into(),
+                element_ref: element_ref.into(),
+                state: state.into(),
+                delay,
+            },
+        }
     }
 }

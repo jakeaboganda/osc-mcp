@@ -7,3 +7,8 @@ Cargo.lock
 .idea/
 *.iml
 .vscode/
+
+# esmini simulation data files (large binary)
+*.dat
+esmini-tests/results/
+esmini-tests/sim.dat

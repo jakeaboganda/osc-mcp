@@ -1,0 +1,62 @@
+esmini GIT REV: v3.0.3-0-2e4264c1
+esmini GIT TAG: v3.0.3
+esmini GIT BRANCH: tags/v3.0.3^0
+esmini BUILD VERSION: N/A - client build
+[] [info] Loaded actor_debug.xosc
+[2026-05-02 19:30:29]
+[] [info] Player options: --osc actor_debug.xosc --camera_mode orbit --fixed_timestep 0.05 --ground_plane auto --headless --info_text 1 --logfile_path log.txt --log_level info --text_scale 1.0 --traj_filter 0.1 
+[] [info] Run simulation decoupled from realtime, with fixed timestep: 0.05
+[] [info] Generated seed 3074537899
+[] [info] Loading actor_debug.xosc (v1.2)
+[] [info] 0 variables
+[] [info] Loaded OpenDRIVE: straight_road.xodr
+[] [info] 3D model search paths attempted for file car_white.osgb:
+[] [info]   car_white.osgb
+[] [info]   .//./car_white.osgb
+[] [info]   .//../resources/models//./car_white.osgb
+[] [info]   .//../models/./car_white.osgb
+[] [warn] 3D model car_white.osgb not located, using specified file path
+[] [info] Assigned 3D model car_white.osgb to vehicle ego
+[] [info] Add and deactivate new object "ego" (id 0)
+[] [warn] Info: "overwrite" priority deprecated in v1.2. Use "override" instead. Accepting it anyway.
+[] [info] 0 parameters
+[0.000] [info] Init ego TeleportAction initState -> startTransition -> runningState
+[0.000] [info] Starting teleport Action
+[0.000] [info] ego New position:
+[0.000] [info] Pos(0.00, 0.00, 0.00) Rot(0.00, 0.00, 0.00) roadId 1 laneId -1 s 0.00 offset 1.75 t 0.00
+[0.000] [info] storyBoard initState -> startTransition -> runningState
+[0.000] [info] main_story initState -> startTransition -> runningState
+[0.000] [info] main_story_act initState -> initToStandbyTransition -> standbyState
+[0.000] [info] ActStartCondition: true, delay: 0.00, 0.0000 >= 0.0000, edge: none
+[0.000] [info] Trigger /------------------------------------------------
+[0.000] [info] Group 0:
+[0.000] [info] ActStartCondition: true
+[0.000] [info] Trigger  ------------------------------------------------/
+[0.000] [info] main_story_act standbyState -> startTransition -> runningState
+[0.000] [info] ego_mg initState -> startTransition -> runningState
+[0.000] [info] ego_maneuver initState -> startTransition -> runningState
+[0.000] [info] speed_event initState -> initToStandbyTransition -> standbyState
+[0.000] [info] EventStartCondition: true, delay: 0.00, 0.0000 >= 0.0000, edge: none
+[0.000] [info] Trigger /------------------------------------------------
+[0.000] [info] Group 0:
+[0.000] [info] EventStartCondition: true
+[0.000] [info] Trigger  ------------------------------------------------/
+[0.000] [info] speed_event standbyState -> startTransition -> runningState
+[0.000] [warn] Stopping Init ego TeleportAction on conflicting Lateral & Longitudinal domain(s)
+[0.000] [info] Init ego TeleportAction runningState -> endTransition -> completeState
+[0.000] [info] action initState -> startTransition -> runningState
+[4.950] [info] action runningState -> endTransition -> completeState
+[4.950] [info] speed_event complete after 1 execution
+[4.950] [info] speed_event runningState -> endTransition -> completeState
+[4.950] [info] ego_maneuver runningState -> endTransition -> completeState
+[4.950] [info] ego_mg complete after 1 execution
+[4.950] [info] ego_mg runningState -> endTransition -> completeState
+[4.950] [info] main_story_act runningState -> endTransition -> completeState
+[4.950] [info] main_story runningState -> endTransition -> completeState
+[10.050] [info] StopCondition: true, delay: 0.00, 10.0500 > 10.0000, edge: rising
+[10.050] [info] Trigger /------------------------------------------------
+[10.050] [info] Group 0:
+[10.050] [info] StopCondition: true
+[10.050] [info] Trigger  ------------------------------------------------/
+[10.050] [info] storyBoard runningState -> stopTransition -> completeState
+[10.050] [info] Closing

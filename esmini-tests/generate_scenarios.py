@@ -73,6 +73,15 @@ async def create_speed_change_scenario(session):
         }
     )
     
+    # Set stop time to 10 seconds (5s for speed change + 5s buffer)
+    await session.call_tool(
+        "set_stop_time",
+        arguments={
+            "scenario_id": scenario_id,
+            "seconds": 10.0
+        }
+    )
+    
     # Validate
     result = await session.call_tool(
         "validate_scenario",

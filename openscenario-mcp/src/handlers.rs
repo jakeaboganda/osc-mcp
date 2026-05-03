@@ -52,15 +52,15 @@ pub fn handle_add_vehicle(
     category: String,
     catalog: Option<String>,
 ) -> Result<String> {
-    // Parse vehicle category
-    let vehicle_category = match category.as_str() {
-        "Car" => VehicleCategory::Car,
-        "Truck" => VehicleCategory::Truck,
-        "Bus" => VehicleCategory::Bus,
-        "Trailer" => VehicleCategory::Trailer,
-        "Van" => VehicleCategory::Van,
-        "Motorbike" => VehicleCategory::Motorbike,
-        "Bicycle" => VehicleCategory::Bicycle,
+    // Parse vehicle category (case-insensitive)
+    let vehicle_category = match category.to_lowercase().as_str() {
+        "car" => VehicleCategory::Car,
+        "truck" => VehicleCategory::Truck,
+        "bus" => VehicleCategory::Bus,
+        "trailer" => VehicleCategory::Trailer,
+        "van" => VehicleCategory::Van,
+        "motorbike" => VehicleCategory::Motorbike,
+        "bicycle" => VehicleCategory::Bicycle,
         _ => return Err(anyhow!("Invalid vehicle category: {}", category)),
     };
 
@@ -155,8 +155,13 @@ pub fn handle_add_speed_action(
     let _ = scenario.add_story(&story_name);
     let _ = scenario.add_act(&story_name, &act_name);
     let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
-    let _ = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone());
     let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
+    
+    // Ensure actor is added (try multiple times if needed)
+    if let Err(e) = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone()) {
+        // If it failed, log but continue - the actor might already exist
+        eprintln!("Note: add_actor returned error (may be ok if already exists): {}", e);
+    }
 
     // Add speed action
     scenario.add_speed_action(
@@ -204,8 +209,12 @@ pub fn handle_add_lane_change_action(
     let _ = scenario.add_story(&story_name);
     let _ = scenario.add_act(&story_name, &act_name);
     let _ = scenario.add_maneuver_group(&story_name, &act_name, &mg_name);
-    let _ = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone());
     let _ = scenario.add_maneuver(&story_name, &act_name, &mg_name, &maneuver_name);
+    
+    // Ensure actor is added
+    if let Err(e) = scenario.add_actor(&story_name, &act_name, &mg_name, entity_name.clone()) {
+        eprintln!("Note: add_actor returned error (may be ok if already exists): {}", e);
+    }
 
     // Add lane change action
     scenario.add_lane_change_action(
@@ -278,4 +287,41 @@ pub fn handle_validate_scenario(
     });
 
     Ok(json_report.to_string())
+}
+
+pub fn handle_set_stop_time(
+    state: Arc<Mutex<ServerState>>,
+    scenario_id: String,
+    seconds: f64,
+) -> Result<String> {
+    let mut state_lock = state
+        .lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
+    let scenario = state_lock
+        .scenarios
+        .get_mut(&scenario_id)
+        .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
+
+    scenario.set_stop_time(seconds);
+    Ok(format!("Set stop time to {} seconds", seconds))
+}
+
+pub fn handle_set_stop_on_element(
+    state: Arc<Mutex<ServerState>>,
+    scenario_id: String,
+    element_type: String,
+    element_ref: String,
+    state_name: String,
+    delay: f64,
+) -> Result<String> {
+    let mut state_lock = state
+        .lock()
+        .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
+    let scenario = state_lock
+        .scenarios
+        .get_mut(&scenario_id)
+        .ok_or_else(|| anyhow!("Scenario not found: {}", scenario_id))?;
+
+    scenario.set_stop_on_element_state(element_type.clone(), element_ref.clone(), state_name.clone(), delay);
+    Ok(format!("Set stop trigger on {} element '{}' reaching state '{}'", element_type, element_ref, state_name))
 }

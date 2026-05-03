@@ -262,7 +262,10 @@ impl Scenario {
                     context: format!("ManeuverGroup in act '{}'", act_name),
                 })?;
 
-        mg.actors.push(entity_name);
+        // Only add if not already present
+        if !mg.actors.contains(&entity_name) {
+            mg.actors.push(entity_name);
+        }
         Ok(())
     }
 
@@ -603,5 +606,28 @@ impl Scenario {
         }
 
         Ok(())
+    }
+
+    /// Set a simple time-based stop trigger
+    pub fn set_stop_time(&mut self, seconds: f64) {
+        use crate::storyboard::StopTrigger;
+        self.storyboard.set_stop_trigger(StopTrigger::simulation_time(seconds));
+    }
+
+    /// Set a stop trigger based on storyboard element state
+    pub fn set_stop_on_element_state(
+        &mut self,
+        element_type: impl Into<String>,
+        element_ref: impl Into<String>,
+        state: impl Into<String>,
+        delay: f64,
+    ) {
+        use crate::storyboard::StopTrigger;
+        self.storyboard.set_stop_trigger(StopTrigger::storyboard_element_state(
+            element_type,
+            element_ref,
+            state,
+            delay,
+        ));
     }
 }

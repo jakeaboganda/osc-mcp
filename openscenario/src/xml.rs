@@ -90,29 +90,172 @@ impl Scenario {
 
         match entity {
             Entity::Vehicle(v) => {
-                writer.write_event(XmlEvent::Start(BytesStart::new("CatalogReference")))?;
-                let mut ref_elem = BytesStart::new("Vehicle");
-                ref_elem.push_attribute(("name", v.name.as_str()));
-                ref_elem.push_attribute((
-                    "vehicleCategory",
-                    format!("{:?}", v.params.vehicle_category).as_str(),
-                ));
-                writer.write_event(XmlEvent::Empty(ref_elem))?;
-                writer.write_event(XmlEvent::End(BytesEnd::new("CatalogReference")))?;
+                // If catalog is provided, use CatalogReference
+                if let Some(catalog) = &v.params.catalog {
+                    let mut ref_elem = BytesStart::new("CatalogReference");
+                    ref_elem.push_attribute(("catalogName", catalog.path.as_str()));
+                    ref_elem.push_attribute(("entryName", catalog.entry_name.as_str()));
+                    writer.write_event(XmlEvent::Empty(ref_elem))?;
+                } else {
+                    // Inline vehicle definition
+                    let mut veh_elem = BytesStart::new("Vehicle");
+                    veh_elem.push_attribute(("name", v.name.as_str()));
+                    veh_elem.push_attribute((
+                        "vehicleCategory",
+                        format!("{:?}", v.params.vehicle_category).to_lowercase().as_str(),
+                    ));
+                    if let Some(props) = &v.params.properties {
+                        if let Some(model) = &props.model3d {
+                            veh_elem.push_attribute(("model3d", model.as_str()));
+                        }
+                    }
+                    writer.write_event(XmlEvent::Start(veh_elem))?;
+
+                    // BoundingBox (using defaults)
+                    writer.write_event(XmlEvent::Start(BytesStart::new("BoundingBox")))?;
+                    let mut center = BytesStart::new("Center");
+                    center.push_attribute(("x", "1.4"));
+                    center.push_attribute(("y", "0.0"));
+                    center.push_attribute(("z", "0.9"));
+                    writer.write_event(XmlEvent::Empty(center))?;
+                    let mut dims = BytesStart::new("Dimensions");
+                    dims.push_attribute(("width", "2.0"));
+                    dims.push_attribute(("length", "5.0"));
+                    dims.push_attribute(("height", "1.8"));
+                    writer.write_event(XmlEvent::Empty(dims))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("BoundingBox")))?;
+
+                    // Performance (using defaults)
+                    let mut perf = BytesStart::new("Performance");
+                    perf.push_attribute(("maxSpeed", "69"));
+                    perf.push_attribute(("maxDeceleration", "30"));
+                    perf.push_attribute(("maxAcceleration", "10"));
+                    writer.write_event(XmlEvent::Empty(perf))?;
+
+                    // Axles (using defaults)
+                    writer.write_event(XmlEvent::Start(BytesStart::new("Axles")))?;
+                    let mut front = BytesStart::new("FrontAxle");
+                    front.push_attribute(("maxSteering", "30"));
+                    front.push_attribute(("wheelDiameter", "0.8"));
+                    front.push_attribute(("trackWidth", "1.68"));
+                    front.push_attribute(("positionX", "2.98"));
+                    front.push_attribute(("positionZ", "0.4"));
+                    writer.write_event(XmlEvent::Empty(front))?;
+                    let mut rear = BytesStart::new("RearAxle");
+                    rear.push_attribute(("maxSteering", "30"));
+                    rear.push_attribute(("wheelDiameter", "0.8"));
+                    rear.push_attribute(("trackWidth", "1.68"));
+                    rear.push_attribute(("positionX", "0"));
+                    rear.push_attribute(("positionZ", "0.4"));
+                    writer.write_event(XmlEvent::Empty(rear))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("Axles")))?;
+
+                    // Properties (if mass is specified)
+                    if let Some(props) = &v.params.properties {
+                        if props.mass.is_some() {
+                            writer.write_event(XmlEvent::Start(BytesStart::new("Properties")))?;
+                            if let Some(mass) = props.mass {
+                                let mut prop = BytesStart::new("Property");
+                                prop.push_attribute(("name", "mass"));
+                                prop.push_attribute(("value", mass.to_string().as_str()));
+                                writer.write_event(XmlEvent::Empty(prop))?;
+                            }
+                            writer.write_event(XmlEvent::End(BytesEnd::new("Properties")))?;
+                        }
+                    }
+
+                    writer.write_event(XmlEvent::End(BytesEnd::new("Vehicle")))?;
+                }
             }
             Entity::Pedestrian(p) => {
-                writer.write_event(XmlEvent::Start(BytesStart::new("CatalogReference")))?;
-                let mut ref_elem = BytesStart::new("Pedestrian");
-                ref_elem.push_attribute(("name", p.name.as_str()));
-                writer.write_event(XmlEvent::Empty(ref_elem))?;
-                writer.write_event(XmlEvent::End(BytesEnd::new("CatalogReference")))?;
+                // If catalog is provided, use CatalogReference
+                if let Some(catalog) = &p.params.catalog {
+                    let mut ref_elem = BytesStart::new("CatalogReference");
+                    ref_elem.push_attribute(("catalogName", catalog.path.as_str()));
+                    ref_elem.push_attribute(("entryName", catalog.entry_name.as_str()));
+                    writer.write_event(XmlEvent::Empty(ref_elem))?;
+                } else {
+                    // Inline pedestrian definition
+                    let mut ped_elem = BytesStart::new("Pedestrian");
+                    ped_elem.push_attribute(("name", p.name.as_str()));
+                    ped_elem.push_attribute(("pedestrianCategory", "pedestrian"));
+                    if let Some(model) = &p.params.model {
+                        ped_elem.push_attribute(("model3d", model.as_str()));
+                    }
+                    writer.write_event(XmlEvent::Start(ped_elem))?;
+
+                    // BoundingBox (pedestrian defaults)
+                    writer.write_event(XmlEvent::Start(BytesStart::new("BoundingBox")))?;
+                    let mut center = BytesStart::new("Center");
+                    center.push_attribute(("x", "0.0"));
+                    center.push_attribute(("y", "0.0"));
+                    center.push_attribute(("z", "0.9"));
+                    writer.write_event(XmlEvent::Empty(center))?;
+                    let mut dims = BytesStart::new("Dimensions");
+                    dims.push_attribute(("width", "0.5"));
+                    dims.push_attribute(("length", "0.5"));
+                    dims.push_attribute(("height", "1.8"));
+                    writer.write_event(XmlEvent::Empty(dims))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("BoundingBox")))?;
+
+                    // Properties (if mass is specified)
+                    if p.params.mass.is_some() {
+                        writer.write_event(XmlEvent::Start(BytesStart::new("Properties")))?;
+                        if let Some(mass) = p.params.mass {
+                            let mut prop = BytesStart::new("Property");
+                            prop.push_attribute(("name", "mass"));
+                            prop.push_attribute(("value", mass.to_string().as_str()));
+                            writer.write_event(XmlEvent::Empty(prop))?;
+                        }
+                        writer.write_event(XmlEvent::End(BytesEnd::new("Properties")))?;
+                    }
+
+                    writer.write_event(XmlEvent::End(BytesEnd::new("Pedestrian")))?;
+                }
             }
             Entity::MiscObject(m) => {
-                writer.write_event(XmlEvent::Start(BytesStart::new("CatalogReference")))?;
-                let mut ref_elem = BytesStart::new("MiscObject");
-                ref_elem.push_attribute(("name", m.name.as_str()));
-                writer.write_event(XmlEvent::Empty(ref_elem))?;
-                writer.write_event(XmlEvent::End(BytesEnd::new("CatalogReference")))?;
+                // If catalog is provided, use CatalogReference
+                if let Some(catalog) = &m.params.catalog {
+                    let mut ref_elem = BytesStart::new("CatalogReference");
+                    ref_elem.push_attribute(("catalogName", catalog.path.as_str()));
+                    ref_elem.push_attribute(("entryName", catalog.entry_name.as_str()));
+                    writer.write_event(XmlEvent::Empty(ref_elem))?;
+                } else {
+                    // Inline misc object definition
+                    let mut misc_elem = BytesStart::new("MiscObject");
+                    misc_elem.push_attribute(("name", m.name.as_str()));
+                    let category = m.params.category.as_deref().unwrap_or("obstacle");
+                    misc_elem.push_attribute(("miscObjectCategory", category));
+                    writer.write_event(XmlEvent::Start(misc_elem))?;
+
+                    // BoundingBox (misc object defaults)
+                    writer.write_event(XmlEvent::Start(BytesStart::new("BoundingBox")))?;
+                    let mut center = BytesStart::new("Center");
+                    center.push_attribute(("x", "0.0"));
+                    center.push_attribute(("y", "0.0"));
+                    center.push_attribute(("z", "0.5"));
+                    writer.write_event(XmlEvent::Empty(center))?;
+                    let mut dims = BytesStart::new("Dimensions");
+                    dims.push_attribute(("width", "1.0"));
+                    dims.push_attribute(("length", "1.0"));
+                    dims.push_attribute(("height", "1.0"));
+                    writer.write_event(XmlEvent::Empty(dims))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("BoundingBox")))?;
+
+                    // Properties (if mass is specified)
+                    if m.params.mass.is_some() {
+                        writer.write_event(XmlEvent::Start(BytesStart::new("Properties")))?;
+                        if let Some(mass) = m.params.mass {
+                            let mut prop = BytesStart::new("Property");
+                            prop.push_attribute(("name", "mass"));
+                            prop.push_attribute(("value", mass.to_string().as_str()));
+                            writer.write_event(XmlEvent::Empty(prop))?;
+                        }
+                        writer.write_event(XmlEvent::End(BytesEnd::new("Properties")))?;
+                    }
+
+                    writer.write_event(XmlEvent::End(BytesEnd::new("MiscObject")))?;
+                }
             }
         }
 
@@ -132,7 +275,7 @@ impl Scenario {
         }
 
         // StopTrigger
-        writer.write_event(XmlEvent::Empty(BytesStart::new("StopTrigger")))?;
+        self.write_stop_trigger(writer)?;
 
         writer.write_event(XmlEvent::End(BytesEnd::new("Storyboard")))?;
         Ok(())
@@ -143,11 +286,9 @@ impl Scenario {
         writer.write_event(XmlEvent::Start(BytesStart::new("Actions")))?;
 
         for (entity_name, position) in self.initial_positions() {
-            writer.write_event(XmlEvent::Start(BytesStart::new("Private")))?;
-
-            let mut ref_elem = BytesStart::new("EntityRef");
-            ref_elem.push_attribute(("entityRef", entity_name.as_str()));
-            writer.write_event(XmlEvent::Empty(ref_elem))?;
+            let mut private_elem = BytesStart::new("Private");
+            private_elem.push_attribute(("entityRef", entity_name.as_str()));
+            writer.write_event(XmlEvent::Start(private_elem))?;
 
             writer.write_event(XmlEvent::Start(BytesStart::new("PrivateAction")))?;
             writer.write_event(XmlEvent::Start(BytesStart::new("TeleportAction")))?;
@@ -327,8 +468,23 @@ impl Scenario {
             self.write_maneuver_group(writer, mg)?;
         }
 
-        // StartTrigger
-        writer.write_event(XmlEvent::Empty(BytesStart::new("StartTrigger")))?;
+        // StartTrigger (default: start immediately at t=0)
+        writer.write_event(XmlEvent::Start(BytesStart::new("StartTrigger")))?;
+        writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
+        let mut cond = BytesStart::new("Condition");
+        cond.push_attribute(("name", "ActStartCondition"));
+        cond.push_attribute(("delay", "0"));
+        cond.push_attribute(("conditionEdge", "none"));
+        writer.write_event(XmlEvent::Start(cond))?;
+        writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
+        let mut sim_time = BytesStart::new("SimulationTimeCondition");
+        sim_time.push_attribute(("value", "0"));
+        sim_time.push_attribute(("rule", "greaterOrEqual"));
+        writer.write_event(XmlEvent::Empty(sim_time))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("StartTrigger")))?;
 
         writer.write_event(XmlEvent::End(BytesEnd::new("Act")))?;
         Ok(())
@@ -399,8 +555,23 @@ impl Scenario {
             self.write_action(writer, action, actor)?;
         }
 
-        // StartTrigger
-        writer.write_event(XmlEvent::Empty(BytesStart::new("StartTrigger")))?;
+        // StartTrigger (default: start when act begins)
+        writer.write_event(XmlEvent::Start(BytesStart::new("StartTrigger")))?;
+        writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
+        let mut cond = BytesStart::new("Condition");
+        cond.push_attribute(("name", "EventStartCondition"));
+        cond.push_attribute(("delay", "0"));
+        cond.push_attribute(("conditionEdge", "none"));
+        writer.write_event(XmlEvent::Start(cond))?;
+        writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
+        let mut sim_time = BytesStart::new("SimulationTimeCondition");
+        sim_time.push_attribute(("value", "0"));
+        sim_time.push_attribute(("rule", "greaterOrEqual"));
+        writer.write_event(XmlEvent::Empty(sim_time))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
+        writer.write_event(XmlEvent::End(BytesEnd::new("StartTrigger")))?;
 
         writer.write_event(XmlEvent::End(BytesEnd::new("Event")))?;
         Ok(())
@@ -423,8 +594,7 @@ impl Scenario {
                 writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalAction")))?;
                 writer.write_event(XmlEvent::Start(BytesStart::new("SpeedAction")))?;
 
-                writer.write_event(XmlEvent::Start(BytesStart::new("SpeedActionDynamics")))?;
-                let mut dyn_elem = BytesStart::new("Dynamics");
+                let mut dyn_elem = BytesStart::new("SpeedActionDynamics");
                 dyn_elem.push_attribute((
                     "dynamicsShape",
                     format!("{:?}", speed.shape).to_lowercase().as_str(),
@@ -432,7 +602,6 @@ impl Scenario {
                 dyn_elem.push_attribute(("value", speed.transition_duration.to_string().as_str()));
                 dyn_elem.push_attribute(("dynamicsDimension", "time"));
                 writer.write_event(XmlEvent::Empty(dyn_elem))?;
-                writer.write_event(XmlEvent::End(BytesEnd::new("SpeedActionDynamics")))?;
 
                 writer.write_event(XmlEvent::Start(BytesStart::new("SpeedActionTarget")))?;
                 let mut target_elem = BytesStart::new("AbsoluteTargetSpeed");
@@ -500,6 +669,61 @@ impl Scenario {
 
         writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;
         writer.write_event(XmlEvent::End(BytesEnd::new("Action")))?;
+        Ok(())
+    }
+
+    fn write_stop_trigger<W: std::io::Write>(&self, writer: &mut Writer<W>) -> Result<()> {
+        if let Some(stop_trigger) = &self.storyboard.stop_trigger {
+            writer.write_event(XmlEvent::Start(BytesStart::new("StopTrigger")))?;
+            writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
+
+            match &stop_trigger.condition {
+                crate::storyboard::StopCondition::SimulationTime { seconds } => {
+                    let mut cond_elem = BytesStart::new("Condition");
+                    cond_elem.push_attribute(("name", "StopCondition"));
+                    cond_elem.push_attribute(("delay", "0"));
+                    cond_elem.push_attribute(("conditionEdge", "rising"));
+                    writer.write_event(XmlEvent::Start(cond_elem))?;
+
+                    writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
+                    let mut time_elem = BytesStart::new("SimulationTimeCondition");
+                    time_elem.push_attribute(("value", seconds.to_string().as_str()));
+                    time_elem.push_attribute(("rule", "greaterThan"));
+                    writer.write_event(XmlEvent::Empty(time_elem))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
+
+                    writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
+                }
+                crate::storyboard::StopCondition::StoryboardElementState {
+                    element_type,
+                    element_ref,
+                    state,
+                    delay,
+                } => {
+                    let mut cond_elem = BytesStart::new("Condition");
+                    cond_elem.push_attribute(("name", "StopCondition"));
+                    cond_elem.push_attribute(("delay", delay.to_string().as_str()));
+                    cond_elem.push_attribute(("conditionEdge", "rising"));
+                    writer.write_event(XmlEvent::Start(cond_elem))?;
+
+                    writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
+                    let mut elem_state = BytesStart::new("StoryboardElementStateCondition");
+                    elem_state.push_attribute(("storyboardElementType", element_type.as_str()));
+                    elem_state.push_attribute(("storyboardElementRef", element_ref.as_str()));
+                    elem_state.push_attribute(("state", state.as_str()));
+                    writer.write_event(XmlEvent::Empty(elem_state))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
+
+                    writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
+                }
+            }
+
+            writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("StopTrigger")))?;
+        } else {
+            // No stop trigger defined, write empty element
+            writer.write_event(XmlEvent::Empty(BytesStart::new("StopTrigger")))?;
+        }
         Ok(())
     }
 }

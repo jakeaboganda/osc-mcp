@@ -1,6 +1,7 @@
 use crate::handlers::{
     handle_add_lane_change_action, handle_add_speed_action, handle_add_vehicle,
-    handle_create_scenario, handle_export_xml, handle_set_position, handle_validate_scenario,
+    handle_create_scenario, handle_export_xml, handle_set_position, handle_set_stop_time,
+    handle_set_stop_on_element, handle_validate_scenario,
 };
 use anyhow::{anyhow, Result};
 use mcp_sdk::types::{
@@ -226,6 +227,58 @@ impl OpenScenarioServer {
                     "required": ["scenario_id"]
                 }),
             },
+            ToolDefinition {
+                name: "set_stop_time".to_string(),
+                description: Some(
+                    "Set a time-based stop trigger for the scenario".to_string(),
+                ),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "scenario_id": {
+                            "type": "string",
+                            "description": "Scenario ID"
+                        },
+                        "seconds": {
+                            "type": "number",
+                            "description": "Simulation time in seconds after which to stop"
+                        }
+                    },
+                    "required": ["scenario_id", "seconds"]
+                }),
+            },
+            ToolDefinition {
+                name: "set_stop_on_element".to_string(),
+                description: Some(
+                    "Set a stop trigger based on storyboard element state".to_string(),
+                ),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "scenario_id": {
+                            "type": "string",
+                            "description": "Scenario ID"
+                        },
+                        "element_type": {
+                            "type": "string",
+                            "description": "Element type (e.g., 'maneuver', 'act', 'story')"
+                        },
+                        "element_ref": {
+                            "type": "string",
+                            "description": "Name/reference of the element"
+                        },
+                        "state": {
+                            "type": "string",
+                            "description": "Target state (e.g., 'completeState', 'endTransition')"
+                        },
+                        "delay": {
+                            "type": "number",
+                            "description": "Delay in seconds after condition is met"
+                        }
+                    },
+                    "required": ["scenario_id", "element_type", "element_ref", "state", "delay"]
+                }),
+            },
         ]
     }
 
@@ -446,6 +499,65 @@ impl OpenScenarioServer {
 
                 let result =
                     handle_validate_scenario(GLOBAL_STATE.clone(), scenario_id.to_string())?;
+
+                Ok(CallToolResponse {
+                    content: vec![ToolResponseContent::Text { text: result }],
+                    is_error: None,
+                    meta: None,
+                })
+            }
+            "set_stop_time" => {
+                let scenario_id = args
+                    .get("scenario_id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'scenario_id' parameter"))?;
+                let seconds = args
+                    .get("seconds")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| anyhow!("Missing or invalid 'seconds' parameter"))?;
+
+                let result = handle_set_stop_time(
+                    GLOBAL_STATE.clone(),
+                    scenario_id.to_string(),
+                    seconds,
+                )?;
+
+                Ok(CallToolResponse {
+                    content: vec![ToolResponseContent::Text { text: result }],
+                    is_error: None,
+                    meta: None,
+                })
+            }
+            "set_stop_on_element" => {
+                let scenario_id = args
+                    .get("scenario_id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'scenario_id' parameter"))?;
+                let element_type = args
+                    .get("element_type")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'element_type' parameter"))?;
+                let element_ref = args
+                    .get("element_ref")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'element_ref' parameter"))?;
+                let state = args
+                    .get("state")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| anyhow!("Missing 'state' parameter"))?;
+                let delay = args
+                    .get("delay")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| anyhow!("Missing or invalid 'delay' parameter"))?;
+
+                let result = handle_set_stop_on_element(
+                    GLOBAL_STATE.clone(),
+                    scenario_id.to_string(),
+                    element_type.to_string(),
+                    element_ref.to_string(),
+                    state.to_string(),
+                    delay,
+                )?;
 
                 Ok(CallToolResponse {
                     content: vec![ToolResponseContent::Text { text: result }],
