@@ -17,8 +17,8 @@ pub use error::{Result, ScenarioError};
 pub use position::Position;
 pub use scenario::Scenario;
 pub use storyboard::{
-    Action, ByValueCondition, ComparisonRule, Condition, ConditionEdge, ConditionGroup,
-    ConditionKind, LaneChangeAction, SpeedAction, Storyboard, TransitionShape, Trigger,
+    Act, Action, ByValueCondition, ComparisonRule, Condition, ConditionEdge, ConditionGroup,
+    ConditionKind, Event, LaneChangeAction, SpeedAction, Storyboard, TransitionShape, Trigger,
 };
 pub use validation::{ValidationReport, XsdValidator};
 pub use version::OpenScenarioVersion;

@@ -21,6 +21,7 @@ impl Story {
 pub struct Act {
     pub name: String,
     pub maneuver_groups: HashMap<String, ManeuverGroup>,
+    pub start_trigger: Option<Trigger>,
 }
 
 impl Act {
@@ -28,7 +29,12 @@ impl Act {
         Self {
             name: name.into(),
             maneuver_groups: HashMap::new(),
+            start_trigger: None,
         }
+    }
+    
+    pub fn set_start_trigger(&mut self, trigger: Trigger) {
+        self.start_trigger = Some(trigger);
     }
 }
 
@@ -68,6 +74,21 @@ impl Maneuver {
 pub struct Event {
     pub name: String,
     pub actions: Vec<Action>,
+    pub start_trigger: Option<Trigger>,
+}
+
+impl Event {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            actions: Vec::new(),
+            start_trigger: None,
+        }
+    }
+    
+    pub fn set_start_trigger(&mut self, trigger: Trigger) {
+        self.start_trigger = Some(trigger);
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

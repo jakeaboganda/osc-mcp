@@ -383,6 +383,7 @@ impl Scenario {
             maneuver.events.push(Event {
                 name: event_name,
                 actions: vec![action],
+                start_trigger: None,
             });
         }
 
@@ -458,6 +459,7 @@ impl Scenario {
             maneuver.events.push(Event {
                 name: event_name,
                 actions: vec![action],
+                start_trigger: None,
             });
         }
 
@@ -526,6 +528,7 @@ impl Scenario {
             maneuver.events.push(Event {
                 name: event_name,
                 actions: vec![action],
+                start_trigger: None,
             });
         }
 
@@ -602,6 +605,7 @@ impl Scenario {
             maneuver.events.push(Event {
                 name: event_name,
                 actions: vec![action],
+                start_trigger: None,
             });
         }
 
