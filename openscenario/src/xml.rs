@@ -650,23 +650,29 @@ impl Scenario {
             self.write_action(writer, action, actor)?;
         }
 
-        // StartTrigger (default: start when act begins)
-        writer.write_event(XmlEvent::Start(BytesStart::new("StartTrigger")))?;
-        writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
-        let mut cond = BytesStart::new("Condition");
-        cond.push_attribute(("name", "EventStartCondition"));
-        cond.push_attribute(("delay", "0"));
-        cond.push_attribute(("conditionEdge", "none"));
-        writer.write_event(XmlEvent::Start(cond))?;
-        writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
-        let mut sim_time = BytesStart::new("SimulationTimeCondition");
-        sim_time.push_attribute(("value", "0"));
-        sim_time.push_attribute(("rule", "greaterOrEqual"));
-        writer.write_event(XmlEvent::Empty(sim_time))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
-        writer.write_event(XmlEvent::End(BytesEnd::new("StartTrigger")))?;
+        // StartTrigger
+        if let Some(trigger) = &event.start_trigger {
+            // Use custom trigger if set
+            self.write_trigger(writer, trigger)?;
+        } else {
+            // Default: start when act begins (t=0)
+            writer.write_event(XmlEvent::Start(BytesStart::new("StartTrigger")))?;
+            writer.write_event(XmlEvent::Start(BytesStart::new("ConditionGroup")))?;
+            let mut cond = BytesStart::new("Condition");
+            cond.push_attribute(("name", "EventStartCondition"));
+            cond.push_attribute(("delay", "0"));
+            cond.push_attribute(("conditionEdge", "none"));
+            writer.write_event(XmlEvent::Start(cond))?;
+            writer.write_event(XmlEvent::Start(BytesStart::new("ByValueCondition")))?;
+            let mut sim_time = BytesStart::new("SimulationTimeCondition");
+            sim_time.push_attribute(("value", "0"));
+            sim_time.push_attribute(("rule", "greaterOrEqual"));
+            writer.write_event(XmlEvent::Empty(sim_time))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("ConditionGroup")))?;
+            writer.write_event(XmlEvent::End(BytesEnd::new("StartTrigger")))?;
+        }
 
         writer.write_event(XmlEvent::End(BytesEnd::new("Event")))?;
         Ok(())

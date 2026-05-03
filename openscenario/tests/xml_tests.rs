@@ -260,3 +260,83 @@ fn test_act_default_start_trigger_xml() {
     assert!(xml.contains("<SimulationTimeCondition"));
     assert!(xml.contains("value=\"0\""));
 }
+
+#[test]
+fn test_event_custom_start_trigger_xml() {
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    
+    // Set up story structure
+    scenario.add_story("MyStory").unwrap();
+    scenario.add_act("MyStory", "MyAct").unwrap();
+    scenario.add_maneuver_group("MyStory", "MyAct", "MyManeuverGroup").unwrap();
+    scenario.add_maneuver("MyStory", "MyAct", "MyManeuverGroup", "MyManeuver").unwrap();
+    
+    // Add an event (via speed action as a convenient way to create one)
+    scenario
+        .add_speed_action(
+            "MyStory",
+            "MyAct",
+            "MyManeuverGroup",
+            "MyManeuver",
+            "MyEvent",
+            50.0,
+            5.0,
+            TransitionShape::Linear,
+        )
+        .unwrap();
+    
+    // Set custom trigger: wait for act completion
+    let trigger = Trigger::new(
+        ConditionGroup::new(vec![
+            Condition::storyboard_element_state("act", "MyAct", "completeState")
+        ])
+    );
+    scenario
+        .set_event_start_trigger(
+            "MyStory",
+            "MyAct",
+            "MyManeuverGroup",
+            "MyManeuver",
+            "MyEvent",
+            trigger,
+        )
+        .unwrap();
+    
+    let xml = scenario.to_xml().expect("XML generation failed");
+    
+    // Should contain StoryboardElementStateCondition
+    assert!(xml.contains("<StoryboardElementStateCondition"));
+    assert!(xml.contains("storyboardElementRef=\"MyAct\""));
+    assert!(xml.contains("state=\"completeState\""));
+}
+
+#[test]
+fn test_event_default_start_trigger_xml() {
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    
+    // Set up story structure
+    scenario.add_story("MyStory").unwrap();
+    scenario.add_act("MyStory", "MyAct").unwrap();
+    scenario.add_maneuver_group("MyStory", "MyAct", "MyManeuverGroup").unwrap();
+    scenario.add_maneuver("MyStory", "MyAct", "MyManeuverGroup", "MyManeuver").unwrap();
+    
+    // Add an event (via speed action) - No trigger set
+    scenario
+        .add_speed_action(
+            "MyStory",
+            "MyAct",
+            "MyManeuverGroup",
+            "MyManeuver",
+            "MyEvent",
+            50.0,
+            5.0,
+            TransitionShape::Linear,
+        )
+        .unwrap();
+    
+    let xml = scenario.to_xml().expect("XML generation failed");
+    
+    // Should contain default t=0 trigger
+    assert!(xml.contains("EventStartCondition"));
+    assert!(xml.contains("<SimulationTimeCondition"));
+}

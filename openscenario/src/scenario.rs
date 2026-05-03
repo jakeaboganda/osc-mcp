@@ -209,6 +209,70 @@ impl Scenario {
         Ok(())
     }
 
+    pub fn set_event_start_trigger(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        maneuver_group: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        trigger: crate::storyboard::Trigger,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = maneuver_group.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg = act
+            .maneuver_groups
+            .get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in maneuver group '{}'", mg_name),
+            })?;
+
+        let event = maneuver
+            .events
+            .iter_mut()
+            .find(|e| e.name == event_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: event_name.clone(),
+                context: format!("Event in maneuver '{}'", maneuver_name),
+            })?;
+
+        event.set_start_trigger(trigger);
+        Ok(())
+    }
+
     pub fn add_maneuver_group(
         &mut self,
         story: impl Into<String>,
