@@ -202,7 +202,7 @@ impl StopTrigger {
 }
 
 /// A trigger defines when an action should start or stop
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
     pub condition_groups: Vec<ConditionGroup>,
 }
@@ -222,7 +222,7 @@ impl Trigger {
 }
 
 /// A group of conditions (logical AND within group, OR between groups)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ConditionGroup {
     pub conditions: Vec<Condition>,
 }
@@ -235,7 +235,7 @@ impl ConditionGroup {
 }
 
 /// A single condition that can trigger an action
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Condition {
     pub name: String,
     pub delay: f64,
@@ -277,7 +277,7 @@ impl Condition {
 }
 
 /// When a condition should be evaluated
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConditionEdge {
     None,
     Rising,
@@ -286,13 +286,13 @@ pub enum ConditionEdge {
 }
 
 /// The type of condition
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConditionKind {
     ByValue(ByValueCondition),
 }
 
 /// Value-based conditions (time, state, etc.)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ByValueCondition {
     SimulationTime {
         value: f64,
@@ -306,7 +306,7 @@ pub enum ByValueCondition {
 }
 
 /// Comparison rules for value-based conditions
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ComparisonRule {
     GreaterOrEqual,
     GreaterThan,

@@ -43,3 +43,20 @@ fn test_event_with_custom_start_trigger() {
     
     assert!(event.start_trigger.is_some());
 }
+
+#[test]
+fn test_trigger_with_multiple_condition_groups() {
+    let trigger = Trigger::with_groups(vec![
+        ConditionGroup::new(vec![
+            Condition::simulation_time(5.0, ComparisonRule::GreaterOrEqual),
+        ]),
+        ConditionGroup::new(vec![
+            Condition::storyboard_element_state("act", "Act1", "completeState"),
+            Condition::simulation_time(10.0, ComparisonRule::GreaterOrEqual),
+        ]),
+    ]);
+    
+    assert_eq!(trigger.condition_groups.len(), 2);
+    assert_eq!(trigger.condition_groups[0].conditions.len(), 1);
+    assert_eq!(trigger.condition_groups[1].conditions.len(), 2);
+}
