@@ -4,24 +4,20 @@ Rust library and MCP server for generating and validating OpenSCENARIO test scen
 
 ## Features
 
-### Phase 1 (v1.0) ✅
-
 - **Multi-version support**: OpenSCENARIO 1.0, 1.1, 1.2 with version detection
 - **Entity management**: Vehicle, Pedestrian, MiscObject with properties
 - **Position types**: All 7 OpenSCENARIO position types
   - Absolute: World, Lane, Road
   - Relative: RelativeWorld, RelativeObject, RelativeLane, RelativeRoad
 - **Storyboard hierarchy**: Story → Act → ManeuverGroup → Maneuver → Event → Action
-- **Actions**: Speed, LaneChange (more coming in Phase 2)
-- **XML export**: Generate valid OpenSCENARIO 1.x XML files
-- **Fail-fast validation**: Immediate feedback on entity conflicts and missing references
-- **MCP server**: Model Context Protocol server for AI agent integration
-
-### Phase 2 (v2.0) ✅
-
+- **Actions**: Speed, LaneChange
+- **Triggers**: Simulation time, storyboard element state, parameter conditions
+- **Parameters**: Declare and reference typed parameters (Integer, Double, String, Boolean)
 - **Catalog loading**: Read and reference external XOSC vehicle/pedestrian/controller catalogs
 - **XSD validation**: Validate scenarios against OpenSCENARIO 1.0/1.1/1.2 XSD schemas
-- **7 MCP tools** for AI-driven scenario generation:
+- **XML export**: Generate valid OpenSCENARIO 1.x XML files
+- **Fail-fast validation**: Immediate feedback on entity conflicts and missing references
+- **MCP server**: Model Context Protocol server for AI agent integration with 7 tools:
   - `create_scenario` - Create new OpenSCENARIO scenarios (versions 1.0, 1.1, 1.2)
   - `add_vehicle` - Add vehicles with catalog support
   - `set_position` - Set entity world positions
@@ -202,7 +198,7 @@ cargo test --test integration_test
 cargo test -- --nocapture
 ```
 
-Test coverage: **32 tests** across 9 test files, covering:
+Test coverage: **73 tests** covering:
 - Version detection and comparison
 - Error handling (all error types)
 - Entity management (conflict detection, validation)
@@ -214,16 +210,11 @@ Test coverage: **32 tests** across 9 test files, covering:
 
 ## Roadmap
 
-### Phase 3 (Next)
 - OpenDRIVE integration for road/lane validation
-- More actions (Position, Distance, Teleport, etc.)
+- Additional actions (Position, Distance, Teleport, etc.)
+- Additional conditions (Speed, ReachPosition, etc.)
 - Pedestrian/MiscObject-specific actions
-- Conditions and triggers (value, entity, storyboard)
-- Parameters and variable references
-
-### Phase 4+
 - Catalog creation and modification
-- ParameterDeclaration support
 - Advanced OpenDRIVE features (junctions, signals)
 - Scenario visualization
 - Performance optimizations
