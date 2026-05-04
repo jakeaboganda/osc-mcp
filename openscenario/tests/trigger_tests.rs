@@ -93,10 +93,10 @@ fn test_parameter_helper_method() {
     }
 }
 
+/// Verifies that ParameterCondition works correctly with all 6 ComparisonRule
+/// variants and handles edge cases like empty strings and special characters.
 #[test]
 fn test_parameter_condition_all_comparison_rules() {
-    use openscenario::*;
-    
     let rules = vec![
         ComparisonRule::LessThan,
         ComparisonRule::LessOrEqual,
@@ -106,14 +106,33 @@ fn test_parameter_condition_all_comparison_rules() {
         ComparisonRule::GreaterThan,
     ];
     
-    for rule in rules {
-        let param_cond = ParameterCondition {
-            parameter_ref: "TestParam".to_string(),
-            value: "42".to_string(),
-            rule: rule.clone(),
+    for rule in rules.clone() {
+        let condition = Condition::parameter("TestParam", "42", rule.clone());
+        match &condition.kind {
+            ConditionKind::ByValue(ByValueCondition::Parameter(pc)) => {
+                assert_eq!(pc.rule, rule);
+                assert_eq!(pc.parameter_ref, "TestParam");
+                assert_eq!(pc.value, "42");
+            }
+            _ => panic!("Expected Parameter condition"),
+        }
+    }
+    
+    // Edge cases
+    let edge_cases = vec![
+        ("", "0", ComparisonRule::EqualTo),           // empty param
+        ("Param.With.Dots", "value", ComparisonRule::NotEqualTo), // special chars
+        ("LongParam", "999999999", ComparisonRule::GreaterThan),  // large number
+    ];
+    
+    for (param, val, rule) in edge_cases {
+        let pc = ParameterCondition {
+            parameter_ref: param.to_string(),
+            value: val.to_string(),
+            rule,
         };
-        
-        assert_eq!(param_cond.rule, rule);
+        assert_eq!(pc.parameter_ref, param);
+        assert_eq!(pc.value, val);
     }
 }
 
@@ -160,10 +179,10 @@ fn test_parameter_condition_xml_serialization() {
     assert!(xml.contains("rule=\"greaterThan\""));
 }
 
+/// Tests that ParameterCondition correctly stores string, numeric, and boolean
+/// values as strings (per OpenSCENARIO spec), including edge cases.
 #[test]
 fn test_parameter_condition_value_types() {
-    use openscenario::*;
-    
     // String value
     let string_cond = ParameterCondition {
         parameter_ref: "VehicleState".to_string(),
@@ -187,4 +206,26 @@ fn test_parameter_condition_value_types() {
         rule: ComparisonRule::EqualTo,
     };
     assert_eq!(boolean_cond.value, "true");
+    
+    // Edge cases
+    let empty_string = ParameterCondition {
+        parameter_ref: "EmptyValue".to_string(),
+        value: "".to_string(),
+        rule: ComparisonRule::EqualTo,
+    };
+    assert_eq!(empty_string.value, "");
+    
+    let zero_numeric = ParameterCondition {
+        parameter_ref: "ZeroSpeed".to_string(),
+        value: "0.0".to_string(),
+        rule: ComparisonRule::LessOrEqual,
+    };
+    assert_eq!(zero_numeric.value, "0.0");
+    
+    let false_boolean = ParameterCondition {
+        parameter_ref: "DisabledFlag".to_string(),
+        value: "false".to_string(),
+        rule: ComparisonRule::NotEqualTo,
+    };
+    assert_eq!(false_boolean.value, "false");
 }
