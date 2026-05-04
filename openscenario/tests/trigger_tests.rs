@@ -159,3 +159,32 @@ fn test_parameter_condition_xml_serialization() {
     assert!(xml.contains("value=\"50.0\""));
     assert!(xml.contains("rule=\"greaterThan\""));
 }
+
+#[test]
+fn test_parameter_condition_value_types() {
+    use openscenario::*;
+    
+    // String value
+    let string_cond = ParameterCondition {
+        parameter_ref: "VehicleState".to_string(),
+        value: "stopped".to_string(),
+        rule: ComparisonRule::EqualTo,
+    };
+    assert_eq!(string_cond.value, "stopped");
+    
+    // Numeric value (stored as string)
+    let numeric_cond = ParameterCondition {
+        parameter_ref: "MaxSpeed".to_string(),
+        value: "50.0".to_string(),
+        rule: ComparisonRule::GreaterThan,
+    };
+    assert_eq!(numeric_cond.value, "50.0");
+    
+    // Boolean value (stored as string)
+    let boolean_cond = ParameterCondition {
+        parameter_ref: "DebugMode".to_string(),
+        value: "true".to_string(),
+        rule: ComparisonRule::EqualTo,
+    };
+    assert_eq!(boolean_cond.value, "true");
+}
