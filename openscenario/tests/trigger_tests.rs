@@ -57,3 +57,18 @@ fn test_trigger_with_multiple_condition_groups() {
     assert_eq!(trigger.condition_groups[0].conditions.len(), 1);
     assert_eq!(trigger.condition_groups[1].conditions.len(), 2);
 }
+
+#[test]
+fn test_parameter_condition_construction() {
+    use openscenario::*;
+    
+    let param_cond = ParameterCondition {
+        parameter_ref: "MaxSpeed".to_string(),
+        value: "50.0".to_string(),
+        rule: ComparisonRule::GreaterThan,
+    };
+    
+    assert_eq!(param_cond.parameter_ref, "MaxSpeed");
+    assert_eq!(param_cond.value, "50.0");
+    assert_eq!(param_cond.rule, ComparisonRule::GreaterThan);
+}
