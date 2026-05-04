@@ -277,6 +277,25 @@ impl Condition {
             }),
         }
     }
+
+    /// Create a parameter condition
+    pub fn parameter(
+        parameter_ref: impl Into<String>,
+        value: impl Into<String>,
+        rule: ComparisonRule,
+    ) -> Self {
+        let param_ref = parameter_ref.into();
+        Self {
+            name: format!("Param_{}", param_ref),
+            delay: 0.0,
+            condition_edge: ConditionEdge::None,
+            kind: ConditionKind::ByValue(ByValueCondition::Parameter(ParameterCondition {
+                parameter_ref: param_ref,
+                value: value.into(),
+                rule,
+            })),
+        }
+    }
 }
 
 /// When a condition should be evaluated
@@ -306,6 +325,15 @@ pub enum ByValueCondition {
         element_ref: String,
         state: String,
     },
+    Parameter(ParameterCondition),
+}
+
+/// Parameter-based condition (checks runtime parameter value)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ParameterCondition {
+    pub parameter_ref: String,
+    pub value: String,
+    pub rule: ComparisonRule,
 }
 
 /// Comparison rules for value-based conditions

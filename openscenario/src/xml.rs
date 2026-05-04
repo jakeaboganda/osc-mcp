@@ -540,6 +540,23 @@ impl Scenario {
                         elem_state.push_attribute(("state", state.as_str()));
                         writer.write_event(XmlEvent::Empty(elem_state))?;
                     }
+                    crate::storyboard::ByValueCondition::Parameter(param_cond) => {
+                        let mut param_cond_elem = BytesStart::new("ParameterCondition");
+                        param_cond_elem.push_attribute(("parameterRef", param_cond.parameter_ref.as_str()));
+                        param_cond_elem.push_attribute(("value", param_cond.value.as_str()));
+
+                        let rule_str = match param_cond.rule {
+                            crate::storyboard::ComparisonRule::GreaterOrEqual => "greaterOrEqual",
+                            crate::storyboard::ComparisonRule::GreaterThan => "greaterThan",
+                            crate::storyboard::ComparisonRule::LessOrEqual => "lessOrEqual",
+                            crate::storyboard::ComparisonRule::LessThan => "lessThan",
+                            crate::storyboard::ComparisonRule::EqualTo => "equalTo",
+                            crate::storyboard::ComparisonRule::NotEqualTo => "notEqualTo",
+                        };
+                        param_cond_elem.push_attribute(("rule", rule_str));
+
+                        writer.write_event(XmlEvent::Empty(param_cond_elem))?;
+                    }
                 }
 
                 writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
