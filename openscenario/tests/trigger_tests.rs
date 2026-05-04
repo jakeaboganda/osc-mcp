@@ -229,3 +229,44 @@ fn test_parameter_condition_value_types() {
     };
     assert_eq!(false_boolean.value, "false");
 }
+
+#[test]
+fn test_invalid_parameter_reference_error() {
+    use openscenario::*;
+    use openscenario::entities::{VehicleCategory, VehicleParams};
+    
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    
+    // Don't add parameter declaration (intentionally missing)
+    
+    // Add vehicle
+    let params = VehicleParams {
+        catalog: None,
+        vehicle_category: VehicleCategory::Car,
+        properties: None,
+    };
+    scenario.add_vehicle("ego", params).unwrap();
+    
+    // Set initial position
+    scenario.set_initial_position("ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+    
+    // Create story with parameter condition that references non-existent parameter
+    scenario.add_story("main_story").unwrap();
+    scenario.add_act("main_story", "main_act").unwrap();
+    
+    let trigger = Trigger::new(ConditionGroup::new(vec![
+        Condition::parameter("NonExistentParam", "50.0", ComparisonRule::GreaterThan)
+    ]));
+    scenario.set_act_start_trigger("main_story", "main_act", trigger).unwrap();
+    
+    // Export XML should fail with InvalidParameterRef error
+    let result = scenario.to_xml();
+    
+    assert!(result.is_err());
+    match result {
+        Err(ScenarioError::InvalidParameterRef(param)) => {
+            assert_eq!(param, "NonExistentParam");
+        }
+        _ => panic!("Expected InvalidParameterRef error"),
+    }
+}

@@ -541,6 +541,11 @@ impl Scenario {
                         writer.write_event(XmlEvent::Empty(elem_state))?;
                     }
                     crate::storyboard::ByValueCondition::Parameter(param_cond) => {
+                        // Validate parameter exists
+                        if !self.parameters.iter().any(|p| p.name == param_cond.parameter_ref) {
+                            return Err(ScenarioError::InvalidParameterRef(param_cond.parameter_ref.clone()));
+                        }
+                        
                         let mut param_cond_elem = BytesStart::new("ParameterCondition");
                         param_cond_elem.push_attribute(("parameterRef", param_cond.parameter_ref.as_str()));
                         param_cond_elem.push_attribute(("value", param_cond.value.as_str()));
