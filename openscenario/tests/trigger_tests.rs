@@ -144,6 +144,9 @@ fn test_parameter_condition_xml_serialization() {
     // Create a scenario with a ParameterCondition in a trigger
     let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
     
+    // Add parameter declaration that will be referenced
+    scenario.add_parameter("MaxSpeed", ParameterType::Double, "60.0").unwrap();
+    
     // Add a vehicle so we have valid scenario structure
     let params = VehicleParams {
         catalog: None,
