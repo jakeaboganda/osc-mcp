@@ -7,16 +7,17 @@ use crate::storyboard::{
 };
 use crate::Position;
 use crate::{OpenScenarioVersion, Result, ScenarioError};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ParameterDeclaration {
     pub name: String,
     pub parameter_type: ParameterType,
     pub value: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ParameterType {
     Integer,
     Double,
@@ -790,5 +791,35 @@ mod parameter_tests {
         assert!(result.is_ok());
         assert_eq!(scenario.parameters.len(), 1);
         assert_eq!(scenario.parameters[0].name, "MaxSpeed");
+    }
+
+    #[test]
+    fn test_add_parameter_duplicate_error() {
+        let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+        scenario.add_parameter("Speed", ParameterType::Double, "50.0").unwrap();
+        
+        let result = scenario.add_parameter("Speed", ParameterType::Integer, "60");
+        assert!(matches!(result, Err(ScenarioError::ParameterConflict { name }) if name == "Speed"));
+    }
+
+    #[test]
+    fn test_add_parameter_all_types() {
+        let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+        
+        // Integer
+        scenario.add_parameter("Count", ParameterType::Integer, "42").unwrap();
+        assert_eq!(scenario.parameters[0].parameter_type, ParameterType::Integer);
+        
+        // Double (already tested, but verify here too)
+        scenario.add_parameter("Speed", ParameterType::Double, "60.0").unwrap();
+        assert_eq!(scenario.parameters[1].parameter_type, ParameterType::Double);
+        
+        // String
+        scenario.add_parameter("State", ParameterType::String, "active").unwrap();
+        assert_eq!(scenario.parameters[2].parameter_type, ParameterType::String);
+        
+        // Boolean
+        scenario.add_parameter("Debug", ParameterType::Boolean, "true").unwrap();
+        assert_eq!(scenario.parameters[3].parameter_type, ParameterType::Boolean);
     }
 }
