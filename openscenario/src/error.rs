@@ -45,6 +45,9 @@ pub enum ScenarioError {
     #[error("Parameter '{name}' already exists")]
     ParameterConflict { name: String },
 
+    #[error("Invalid parameter reference: {0}")]
+    InvalidParameterRef(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
