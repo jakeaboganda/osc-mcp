@@ -42,6 +42,9 @@ pub enum ScenarioError {
     #[error("Invalid catalog: {0}")]
     InvalidCatalog(String),
 
+    #[error("Parameter '{name}' already exists")]
+    ParameterConflict { name: String },
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 

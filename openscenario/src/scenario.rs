@@ -9,10 +9,26 @@ use crate::Position;
 use crate::{OpenScenarioVersion, Result, ScenarioError};
 use std::collections::HashMap;
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParameterDeclaration {
+    pub name: String,
+    pub parameter_type: ParameterType,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ParameterType {
+    Integer,
+    Double,
+    String,
+    Boolean,
+}
+
 pub struct Scenario {
     pub(crate) version: OpenScenarioVersion,
     pub(crate) entities: HashMap<String, Entity>,
     pub(crate) initial_positions: HashMap<String, Position>,
+    pub(crate) parameters: Vec<ParameterDeclaration>,
     pub(crate) storyboard: Storyboard,
 }
 
@@ -22,12 +38,35 @@ impl Scenario {
             version,
             entities: HashMap::new(),
             initial_positions: HashMap::new(),
+            parameters: Vec::new(),
             storyboard: Storyboard::new(),
         }
     }
 
     pub fn version(&self) -> OpenScenarioVersion {
         self.version
+    }
+
+    pub fn add_parameter(
+        &mut self,
+        name: impl Into<String>,
+        parameter_type: ParameterType,
+        value: impl Into<String>,
+    ) -> Result<()> {
+        let name = name.into();
+        
+        // Check for duplicate parameter names
+        if self.parameters.iter().any(|p| p.name == name) {
+            return Err(ScenarioError::ParameterConflict { name });
+        }
+        
+        self.parameters.push(ParameterDeclaration {
+            name,
+            parameter_type,
+            value: value.into(),
+        });
+        
+        Ok(())
     }
 
     pub fn add_vehicle(&mut self, name: impl Into<String>, params: VehicleParams) -> Result<()> {
@@ -731,5 +770,25 @@ impl Scenario {
                 state,
                 delay,
             ));
+    }
+}
+
+#[cfg(test)]
+mod parameter_tests {
+    use super::*;
+
+    #[test]
+    fn test_add_parameter_declaration() {
+        let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+        
+        let result = scenario.add_parameter(
+            "MaxSpeed",
+            ParameterType::Double,
+            "60.0",
+        );
+        
+        assert!(result.is_ok());
+        assert_eq!(scenario.parameters.len(), 1);
+        assert_eq!(scenario.parameters[0].name, "MaxSpeed");
     }
 }
