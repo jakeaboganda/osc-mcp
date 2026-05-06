@@ -347,3 +347,62 @@ fn test_triggering_entities_clone() {
     let cloned = entities.clone();
     assert_eq!(entities, cloned);
 }
+
+#[test]
+fn test_speed_condition_construction() {
+    let speed_cond = SpeedCondition {
+        value: 30.0,
+        rule: Rule::GreaterThan,
+    };
+    
+    assert_eq!(speed_cond.value, 30.0);
+    assert_eq!(speed_cond.rule, Rule::GreaterThan);
+}
+
+#[test]
+fn test_speed_condition_all_rules() {
+    let gt = SpeedCondition { value: 50.0, rule: Rule::GreaterThan };
+    let lt = SpeedCondition { value: 20.0, rule: Rule::LessThan };
+    let eq = SpeedCondition { value: 30.0, rule: Rule::EqualTo };
+    
+    assert_eq!(gt.rule, Rule::GreaterThan);
+    assert_eq!(lt.rule, Rule::LessThan);
+    assert_eq!(eq.rule, Rule::EqualTo);
+}
+
+#[test]
+fn test_entity_condition_speed_variant() {
+    let speed_cond = SpeedCondition {
+        value: 15.5,
+        rule: Rule::LessThan,
+    };
+    let entity_cond = EntityCondition::Speed(speed_cond.clone());
+    
+    match entity_cond {
+        EntityCondition::Speed(sc) => {
+            assert_eq!(sc.value, 15.5);
+            assert_eq!(sc.rule, Rule::LessThan);
+        }
+    }
+}
+
+#[test]
+fn test_by_entity_condition_construction() {
+    let triggering = TriggeringEntities {
+        rule: TriggeringEntitiesRule::Any,
+        entity_refs: vec!["Ego".to_string()],
+    };
+    
+    let speed_cond = SpeedCondition {
+        value: 25.0,
+        rule: Rule::GreaterThan,
+    };
+    
+    let by_entity = ByEntityCondition {
+        triggering_entities: triggering.clone(),
+        entity_condition: EntityCondition::Speed(speed_cond),
+    };
+    
+    assert_eq!(by_entity.triggering_entities.rule, TriggeringEntitiesRule::Any);
+    assert_eq!(by_entity.triggering_entities.entity_refs.len(), 1);
+}

@@ -20,6 +20,7 @@ pub use storyboard::{
     Act, Action, ByValueCondition, Rule, Condition, ConditionEdge, ConditionGroup,
     ConditionKind, Event, LaneChangeAction, ParameterCondition, SpeedAction, Storyboard,
     TransitionShape, Trigger, TriggeringEntitiesRule, TriggeringEntities,
+    SpeedCondition, EntityCondition, ByEntityCondition,
 };
 pub use validation::{ValidationReport, XsdValidator};
 pub use version::OpenScenarioVersion;

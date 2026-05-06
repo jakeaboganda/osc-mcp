@@ -374,3 +374,38 @@ pub struct TriggeringEntities {
     /// List of entity names that will be checked
     pub entity_refs: Vec<String>,
 }
+
+/// Speed condition checks entity speed against a target value.
+///
+/// Compares the triggering entity's speed to a target speed value
+/// using the specified comparison rule. Speed is measured in meters per second.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SpeedCondition {
+    /// Target speed value in meters per second
+    pub value: f64,
+    /// Comparison rule (greaterThan, lessThan, equalTo)
+    pub rule: Rule,
+}
+
+/// Entity-based condition types.
+///
+/// Represents different conditions that can be checked against entity state.
+/// Currently supports speed; more variants to be added in future phases.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum EntityCondition {
+    /// Speed-based condition
+    Speed(SpeedCondition),
+    // Future: Acceleration, ReachPosition, etc.
+}
+
+/// By-entity condition with triggering entities.
+///
+/// Wraps an entity condition with the list of entities to check and
+/// the rule for combining their results (any or all).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ByEntityCondition {
+    /// Entities that trigger this condition and combination rule
+    pub triggering_entities: TriggeringEntities,
+    /// The specific entity condition to check
+    pub entity_condition: EntityCondition,
+}
