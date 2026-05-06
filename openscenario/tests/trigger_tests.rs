@@ -436,3 +436,64 @@ fn test_condition_kind_by_entity_variant() {
         _ => panic!("Expected ByEntity variant"),
     }
 }
+
+#[test]
+fn test_invalid_entity_reference_error() {
+    use openscenario::entities::{VehicleCategory, VehicleParams};
+    use openscenario::{Scenario, OpenScenarioVersion, ScenarioError};
+    
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    
+    // Add only one vehicle
+    let params = VehicleParams {
+        catalog: None,
+        vehicle_category: VehicleCategory::Car,
+        properties: None,
+    };
+    scenario.add_vehicle("Ego", params).unwrap();
+    scenario.set_initial_position("Ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+    
+    // Create condition referencing non-existent entity
+    let triggering = TriggeringEntities {
+        rule: TriggeringEntitiesRule::Any,
+        entity_refs: vec!["NonExistent".to_string()],
+    };
+    
+    let speed_cond = SpeedCondition {
+        value: 30.0,
+        rule: Rule::GreaterThan,
+    };
+    
+    let by_entity = ByEntityCondition {
+        triggering_entities: triggering,
+        entity_condition: EntityCondition::Speed(speed_cond),
+    };
+    
+    let condition = Condition {
+        name: "TestSpeed".to_string(),
+        delay: 0.0,
+        condition_edge: ConditionEdge::None,
+        kind: ConditionKind::ByEntity(by_entity),
+    };
+    
+    let condition_group = ConditionGroup::new(vec![condition]);
+    let trigger = Trigger::new(condition_group);
+    
+    scenario.add_story("TestStory").unwrap();
+    scenario.add_act("TestStory", "TestAct").unwrap();
+    scenario
+        .set_act_start_trigger("TestStory", "TestAct", trigger)
+        .unwrap();
+    
+    // Try to export - should fail with InvalidEntityRef
+    let result = scenario.to_xml();
+    assert!(result.is_err());
+    
+    match result.unwrap_err() {
+        ScenarioError::InvalidEntityRef(entity, available) => {
+            assert_eq!(entity, "NonExistent");
+            assert!(available.contains("Ego"));
+        }
+        _ => panic!("Expected InvalidEntityRef error"),
+    }
+}
