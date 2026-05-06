@@ -303,3 +303,13 @@ fn test_rule_clone_and_partialeq() {
     
     assert_eq!(rule1, rule2);
 }
+
+#[test]
+fn test_all_rule_operators_xml() {
+    use openscenario::storyboard::Rule;
+    use openscenario::xml::rule_to_string;
+    
+    assert_eq!(rule_to_string(&Rule::GreaterThan), "greaterThan");
+    assert_eq!(rule_to_string(&Rule::LessThan), "lessThan");
+    assert_eq!(rule_to_string(&Rule::EqualTo), "equalTo");
+}

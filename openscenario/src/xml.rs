@@ -547,14 +547,7 @@ impl Scenario {
                     crate::storyboard::ByValueCondition::SimulationTime { value, rule } => {
                         let mut sim_time = BytesStart::new("SimulationTimeCondition");
                         sim_time.push_attribute(("value", value.to_string().as_str()));
-
-                        let rule_str = match rule {
-                            crate::storyboard::Rule::GreaterThan => "greaterThan",
-                            crate::storyboard::Rule::LessThan => "lessThan",
-                            crate::storyboard::Rule::EqualTo => "equalTo",
-                        };
-                        sim_time.push_attribute(("rule", rule_str));
-
+                        sim_time.push_attribute(("rule", rule_to_string(rule)));
                         writer.write_event(XmlEvent::Empty(sim_time))?;
                     }
                     crate::storyboard::ByValueCondition::StoryboardElementState {
@@ -584,14 +577,7 @@ impl Scenario {
                         param_cond_elem
                             .push_attribute(("parameterRef", param_cond.parameter_ref.as_str()));
                         param_cond_elem.push_attribute(("value", param_cond.value.as_str()));
-
-                        let rule_str = match param_cond.rule {
-                            crate::storyboard::Rule::GreaterThan => "greaterThan",
-                            crate::storyboard::Rule::LessThan => "lessThan",
-                            crate::storyboard::Rule::EqualTo => "equalTo",
-                        };
-                        param_cond_elem.push_attribute(("rule", rule_str));
-
+                        param_cond_elem.push_attribute(("rule", rule_to_string(&param_cond.rule)));
                         writer.write_event(XmlEvent::Empty(param_cond_elem))?;
                     }
                 }
@@ -882,5 +868,14 @@ impl Scenario {
             writer.write_event(XmlEvent::Empty(BytesStart::new("StopTrigger")))?;
         }
         Ok(())
+    }
+}
+
+/// Convert a Rule enum value to its OpenSCENARIO 1.0 XML string representation.
+pub fn rule_to_string(rule: &crate::storyboard::Rule) -> &'static str {
+    match rule {
+        crate::storyboard::Rule::GreaterThan => "greaterThan",
+        crate::storyboard::Rule::LessThan => "lessThan",
+        crate::storyboard::Rule::EqualTo => "equalTo",
     }
 }
