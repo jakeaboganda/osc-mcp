@@ -438,9 +438,8 @@ fn test_condition_kind_by_entity_variant() {
 }
 
 #[test]
-fn test_invalid_entity_reference_error() {
+fn test_invalid_entity_reference_in_condition() {
     use openscenario::entities::{VehicleCategory, VehicleParams};
-    use openscenario::{Scenario, OpenScenarioVersion, ScenarioError};
     
     let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
     
@@ -490,9 +489,9 @@ fn test_invalid_entity_reference_error() {
     assert!(result.is_err());
     
     match result.unwrap_err() {
-        ScenarioError::InvalidEntityRef(entity, available) => {
+        ScenarioError::InvalidEntityRef { entity, available } => {
             assert_eq!(entity, "NonExistent");
-            assert!(available.contains("Ego"));
+            assert!(available.contains(&"Ego".to_string()));
         }
         _ => panic!("Expected InvalidEntityRef error"),
     }

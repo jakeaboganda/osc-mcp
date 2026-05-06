@@ -49,8 +49,11 @@ pub enum ScenarioError {
     InvalidParameterRef(String),
 
     /// Invalid entity reference in condition
-    #[error("Invalid entity reference '{0}': entity not found in scenario. Available entities: {1}")]
-    InvalidEntityRef(String, String),
+    #[error("Invalid entity reference '{entity}': entity not found in scenario. Available entities: {available:?}")]
+    InvalidEntityRef {
+        entity: String,
+        available: Vec<String>,
+    },
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
