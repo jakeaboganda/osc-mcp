@@ -313,3 +313,37 @@ fn test_all_rule_operators_xml() {
     assert_eq!(rule_to_string(&Rule::LessThan), "lessThan");
     assert_eq!(rule_to_string(&Rule::EqualTo), "equalTo");
 }
+
+#[test]
+fn test_triggering_entities_rule() {
+    let any_rule = TriggeringEntitiesRule::Any;
+    let all_rule = TriggeringEntitiesRule::All;
+    
+    assert_eq!(any_rule, TriggeringEntitiesRule::Any);
+    assert_eq!(all_rule, TriggeringEntitiesRule::All);
+    assert_ne!(any_rule, all_rule);
+}
+
+#[test]
+fn test_triggering_entities_construction() {
+    let entities = TriggeringEntities {
+        rule: TriggeringEntitiesRule::Any,
+        entity_refs: vec!["Ego".to_string(), "Target".to_string()],
+    };
+    
+    assert_eq!(entities.rule, TriggeringEntitiesRule::Any);
+    assert_eq!(entities.entity_refs.len(), 2);
+    assert_eq!(entities.entity_refs[0], "Ego");
+    assert_eq!(entities.entity_refs[1], "Target");
+}
+
+#[test]
+fn test_triggering_entities_clone() {
+    let entities = TriggeringEntities {
+        rule: TriggeringEntitiesRule::All,
+        entity_refs: vec!["Vehicle1".to_string()],
+    };
+    
+    let cloned = entities.clone();
+    assert_eq!(entities, cloned);
+}

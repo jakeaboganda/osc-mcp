@@ -19,7 +19,7 @@ pub use scenario::{ParameterDeclaration, ParameterType, Scenario};
 pub use storyboard::{
     Act, Action, ByValueCondition, Rule, Condition, ConditionEdge, ConditionGroup,
     ConditionKind, Event, LaneChangeAction, ParameterCondition, SpeedAction, Storyboard,
-    TransitionShape, Trigger,
+    TransitionShape, Trigger, TriggeringEntitiesRule, TriggeringEntities,
 };
 pub use validation::{ValidationReport, XsdValidator};
 pub use version::OpenScenarioVersion;

@@ -350,3 +350,27 @@ pub enum Rule {
     /// Equal to operator (==)
     EqualTo,
 }
+
+/// Triggering entities rule (any vs all).
+///
+/// Determines whether at least one entity (`Any`) or all entities (`All`)
+/// must satisfy the condition for it to be considered true.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum TriggeringEntitiesRule {
+    /// At least one entity must satisfy the condition
+    Any,
+    /// All entities must satisfy the condition
+    All,
+}
+
+/// Collection of entities that trigger a condition.
+///
+/// Contains the list of entity references and the rule determining
+/// whether any or all must satisfy the condition.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TriggeringEntities {
+    /// Rule for combining entity conditions (any or all)
+    pub rule: TriggeringEntitiesRule,
+    /// List of entity names that will be checked
+    pub entity_refs: Vec<String>,
+}
