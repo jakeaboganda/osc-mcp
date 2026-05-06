@@ -584,8 +584,22 @@ impl Scenario {
 
                 writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
             }
-            crate::storyboard::ConditionKind::ByEntity(_by_entity) => {
-                // TODO: Implement ByEntityCondition XML serialization in future task
+            crate::storyboard::ConditionKind::ByEntity(by_entity) => {
+                // Validate all entity references before generating XML
+                for entity_ref in &by_entity.triggering_entities.entity_refs {
+                    if !self.entities.contains_key(entity_ref) {
+                        let available = self.entities.keys()
+                            .map(|s| s.to_string())
+                            .collect::<Vec<_>>();
+                        return Err(ScenarioError::InvalidEntityRef {
+                            entity: entity_ref.clone(),
+                            available,
+                        });
+                    }
+                }
+                
+                // Entity validation passed - XML generation will be added in Task 10
+                // For now, write placeholder XML to avoid compile errors
                 writer.write_event(XmlEvent::Start(BytesStart::new("ByEntityCondition")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("ByEntityCondition")))?;
             }

@@ -496,3 +496,55 @@ fn test_invalid_entity_reference_in_condition() {
         _ => panic!("Expected InvalidEntityRef error"),
     }
 }
+
+#[test]
+fn test_valid_entity_reference_succeeds() {
+    use openscenario::entities::{VehicleCategory, VehicleParams};
+    
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    
+    // Add vehicle
+    let params = VehicleParams {
+        catalog: None,
+        vehicle_category: VehicleCategory::Car,
+        properties: None,
+    };
+    scenario.add_vehicle("Ego", params).unwrap();
+    scenario.set_initial_position("Ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+    
+    // Create condition with valid entity reference
+    let triggering = TriggeringEntities {
+        rule: TriggeringEntitiesRule::Any,
+        entity_refs: vec!["Ego".to_string()],
+    };
+    
+    let speed_cond = SpeedCondition {
+        value: 30.0,
+        rule: Rule::GreaterThan,
+    };
+    
+    let by_entity = ByEntityCondition {
+        triggering_entities: triggering,
+        entity_condition: EntityCondition::Speed(speed_cond),
+    };
+    
+    let condition = Condition {
+        name: "TestSpeed".to_string(),
+        delay: 0.0,
+        condition_edge: ConditionEdge::None,
+        kind: ConditionKind::ByEntity(by_entity),
+    };
+    
+    let condition_group = ConditionGroup::new(vec![condition]);
+    let trigger = Trigger::new(condition_group);
+    
+    scenario.add_story("TestStory").unwrap();
+    scenario.add_act("TestStory", "TestAct").unwrap();
+    scenario
+        .set_act_start_trigger("TestStory", "TestAct", trigger)
+        .unwrap();
+    
+    // Should succeed (validation passes)
+    let result = scenario.to_xml();
+    assert!(result.is_ok());
+}
