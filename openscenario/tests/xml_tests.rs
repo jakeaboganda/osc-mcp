@@ -1,7 +1,7 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
 use openscenario::position::Orientation;
 use openscenario::storyboard::{
-    ComparisonRule, Condition, ConditionGroup, TransitionShape, Trigger,
+    Rule, Condition, ConditionGroup, TransitionShape, Trigger,
 };
 use openscenario::{OpenScenarioVersion, Position, Scenario};
 
@@ -236,7 +236,7 @@ fn test_act_custom_start_trigger_xml() {
     // Create custom trigger: start at t=10
     let trigger = Trigger::new(ConditionGroup::new(vec![Condition::simulation_time(
         10.0,
-        ComparisonRule::GreaterOrEqual,
+        Rule::GreaterThan,
     )]));
 
     scenario
@@ -248,7 +248,7 @@ fn test_act_custom_start_trigger_xml() {
     // Should contain SimulationTimeCondition with value=10
     assert!(xml.contains("<SimulationTimeCondition"));
     assert!(xml.contains("value=\"10\""));
-    assert!(xml.contains("rule=\"greaterOrEqual\""));
+    assert!(xml.contains("rule=\"greaterThan\""));
 }
 
 #[test]

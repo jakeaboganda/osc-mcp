@@ -1,6 +1,6 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
 use openscenario::storyboard::{
-    ComparisonRule, Condition, ConditionGroup, TransitionShape, Trigger,
+    Rule, Condition, ConditionGroup, TransitionShape, Trigger,
 };
 use openscenario::{OpenScenarioVersion, Position, Scenario};
 use std::process::Command;
@@ -29,7 +29,7 @@ fn test_scenario_with_custom_triggers_in_esmini() {
     // Act starts at t=2
     let act_trigger = Trigger::new(ConditionGroup::new(vec![Condition::simulation_time(
         2.0,
-        ComparisonRule::GreaterOrEqual,
+        Rule::GreaterThan,
     )]));
     scenario
         .set_act_start_trigger("TriggerTestStory", "DelayedAct", act_trigger)
@@ -70,7 +70,7 @@ fn test_scenario_with_custom_triggers_in_esmini() {
     // Event starts 1 second after act (total t=3)
     let event_trigger = Trigger::new(ConditionGroup::new(vec![Condition::simulation_time(
         1.0,
-        ComparisonRule::GreaterOrEqual,
+        Rule::GreaterThan,
     )]));
     scenario
         .set_event_start_trigger(

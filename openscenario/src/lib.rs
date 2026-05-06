@@ -17,7 +17,7 @@ pub use error::{Result, ScenarioError};
 pub use position::Position;
 pub use scenario::{ParameterDeclaration, ParameterType, Scenario};
 pub use storyboard::{
-    Act, Action, ByValueCondition, ComparisonRule, Condition, ConditionEdge, ConditionGroup,
+    Act, Action, ByValueCondition, Rule, Condition, ConditionEdge, ConditionGroup,
     ConditionKind, Event, LaneChangeAction, ParameterCondition, SpeedAction, Storyboard,
     TransitionShape, Trigger,
 };

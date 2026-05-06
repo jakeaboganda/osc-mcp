@@ -73,13 +73,16 @@ impl Scenario {
         Ok(())
     }
 
-    fn write_parameter_declarations<W: std::io::Write>(&self, writer: &mut Writer<W>) -> Result<()> {
+    fn write_parameter_declarations<W: std::io::Write>(
+        &self,
+        writer: &mut Writer<W>,
+    ) -> Result<()> {
         writer.write_event(XmlEvent::Start(BytesStart::new("ParameterDeclarations")))?;
 
         for param in &self.parameters {
             let mut elem = BytesStart::new("ParameterDeclaration");
             elem.push_attribute(("name", param.name.as_str()));
-            
+
             let param_type_str = match param.parameter_type {
                 crate::scenario::ParameterType::Integer => "integer",
                 crate::scenario::ParameterType::Double => "double",
@@ -88,7 +91,7 @@ impl Scenario {
             };
             elem.push_attribute(("parameterType", param_type_str));
             elem.push_attribute(("value", param.value.as_str()));
-            
+
             writer.write_event(XmlEvent::Empty(elem))?;
         }
 
@@ -546,12 +549,9 @@ impl Scenario {
                         sim_time.push_attribute(("value", value.to_string().as_str()));
 
                         let rule_str = match rule {
-                            crate::storyboard::ComparisonRule::GreaterOrEqual => "greaterOrEqual",
-                            crate::storyboard::ComparisonRule::GreaterThan => "greaterThan",
-                            crate::storyboard::ComparisonRule::LessOrEqual => "lessOrEqual",
-                            crate::storyboard::ComparisonRule::LessThan => "lessThan",
-                            crate::storyboard::ComparisonRule::EqualTo => "equalTo",
-                            crate::storyboard::ComparisonRule::NotEqualTo => "notEqualTo",
+                            crate::storyboard::Rule::GreaterThan => "greaterThan",
+                            crate::storyboard::Rule::LessThan => "lessThan",
+                            crate::storyboard::Rule::EqualTo => "equalTo",
                         };
                         sim_time.push_attribute(("rule", rule_str));
 
@@ -570,21 +570,25 @@ impl Scenario {
                     }
                     crate::storyboard::ByValueCondition::Parameter(param_cond) => {
                         // Validate parameter exists
-                        if !self.parameters.iter().any(|p| p.name == param_cond.parameter_ref) {
-                            return Err(ScenarioError::InvalidParameterRef(param_cond.parameter_ref.clone()));
+                        if !self
+                            .parameters
+                            .iter()
+                            .any(|p| p.name == param_cond.parameter_ref)
+                        {
+                            return Err(ScenarioError::InvalidParameterRef(
+                                param_cond.parameter_ref.clone(),
+                            ));
                         }
-                        
+
                         let mut param_cond_elem = BytesStart::new("ParameterCondition");
-                        param_cond_elem.push_attribute(("parameterRef", param_cond.parameter_ref.as_str()));
+                        param_cond_elem
+                            .push_attribute(("parameterRef", param_cond.parameter_ref.as_str()));
                         param_cond_elem.push_attribute(("value", param_cond.value.as_str()));
 
                         let rule_str = match param_cond.rule {
-                            crate::storyboard::ComparisonRule::GreaterOrEqual => "greaterOrEqual",
-                            crate::storyboard::ComparisonRule::GreaterThan => "greaterThan",
-                            crate::storyboard::ComparisonRule::LessOrEqual => "lessOrEqual",
-                            crate::storyboard::ComparisonRule::LessThan => "lessThan",
-                            crate::storyboard::ComparisonRule::EqualTo => "equalTo",
-                            crate::storyboard::ComparisonRule::NotEqualTo => "notEqualTo",
+                            crate::storyboard::Rule::GreaterThan => "greaterThan",
+                            crate::storyboard::Rule::LessThan => "lessThan",
+                            crate::storyboard::Rule::EqualTo => "equalTo",
                         };
                         param_cond_elem.push_attribute(("rule", rule_str));
 

@@ -245,7 +245,7 @@ pub struct Condition {
 
 impl Condition {
     /// Create a simulation time condition
-    pub fn simulation_time(seconds: f64, rule: ComparisonRule) -> Self {
+    pub fn simulation_time(seconds: f64, rule: Rule) -> Self {
         Self {
             name: format!("SimTime_{}", seconds),
             delay: 0.0,
@@ -282,7 +282,7 @@ impl Condition {
     pub fn parameter(
         parameter_ref: impl Into<String>,
         value: impl Into<String>,
-        rule: ComparisonRule,
+        rule: Rule,
     ) -> Self {
         let param_ref = parameter_ref.into();
         Self {
@@ -318,7 +318,7 @@ pub enum ConditionKind {
 pub enum ByValueCondition {
     SimulationTime {
         value: f64,
-        rule: ComparisonRule,
+        rule: Rule,
     },
     StoryboardElementState {
         element_type: String,
@@ -333,16 +333,20 @@ pub enum ByValueCondition {
 pub struct ParameterCondition {
     pub parameter_ref: String,
     pub value: String,
-    pub rule: ComparisonRule,
+    pub rule: Rule,
 }
 
-/// Comparison rules for value-based conditions
+/// OpenSCENARIO 1.0 compliant comparison rule.
+///
+/// Defines the three comparison operators supported by the OpenSCENARIO 1.0 specification
+/// for value-based conditions. Used in SimulationTimeCondition, ParameterCondition, and
+/// entity-based conditions like SpeedCondition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum ComparisonRule {
-    GreaterOrEqual,
+pub enum Rule {
+    /// Greater than operator (>)
     GreaterThan,
-    LessOrEqual,
+    /// Less than operator (<)
     LessThan,
+    /// Equal to operator (==)
     EqualTo,
-    NotEqualTo,
 }
