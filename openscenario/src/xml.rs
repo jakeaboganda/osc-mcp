@@ -584,6 +584,11 @@ impl Scenario {
 
                 writer.write_event(XmlEvent::End(BytesEnd::new("ByValueCondition")))?;
             }
+            crate::storyboard::ConditionKind::ByEntity(_by_entity) => {
+                // TODO: Implement ByEntityCondition XML serialization in future task
+                writer.write_event(XmlEvent::Start(BytesStart::new("ByEntityCondition")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("ByEntityCondition")))?;
+            }
         }
 
         writer.write_event(XmlEvent::End(BytesEnd::new("Condition")))?;

@@ -311,6 +311,7 @@ pub enum ConditionEdge {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConditionKind {
     ByValue(ByValueCondition),
+    ByEntity(ByEntityCondition),
 }
 
 /// Value-based conditions (time, state, etc.)

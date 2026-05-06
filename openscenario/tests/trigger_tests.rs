@@ -406,3 +406,33 @@ fn test_by_entity_condition_construction() {
     assert_eq!(by_entity.triggering_entities.rule, TriggeringEntitiesRule::Any);
     assert_eq!(by_entity.triggering_entities.entity_refs.len(), 1);
 }
+
+#[test]
+fn test_condition_kind_by_entity_variant() {
+    let triggering = TriggeringEntities {
+        rule: TriggeringEntitiesRule::Any,
+        entity_refs: vec!["Ego".to_string()],
+    };
+    
+    let speed_cond = SpeedCondition {
+        value: 40.0,
+        rule: Rule::GreaterThan,
+    };
+    
+    let by_entity = ByEntityCondition {
+        triggering_entities: triggering,
+        entity_condition: EntityCondition::Speed(speed_cond),
+    };
+    
+    let kind = ConditionKind::ByEntity(by_entity.clone());
+    
+    match kind {
+        ConditionKind::ByEntity(be) => {
+            assert_eq!(be.triggering_entities.entity_refs[0], "Ego");
+            match be.entity_condition {
+                EntityCondition::Speed(sc) => assert_eq!(sc.value, 40.0),
+            }
+        }
+        _ => panic!("Expected ByEntity variant"),
+    }
+}
