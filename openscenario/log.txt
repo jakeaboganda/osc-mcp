@@ -1,0 +1,61 @@
+esmini GIT REV: v3.0.3-0-2e4264c1
+esmini GIT TAG: v3.0.3
+esmini GIT BRANCH: tags/v3.0.3^0
+esmini BUILD VERSION: N/A - client build
+[] [info] Loaded /tmp/trigger_integration_test.xosc
+[2026-05-06 23:16:38]
+[] [info] Player options: --osc /tmp/trigger_integration_test.xosc --camera_mode orbit --fixed_timestep 0.01 --ground_plane auto --headless --info_text 1 --logfile_path log.txt --log_level info --record sim.dat --text_scale 1.0 --traj_filter 0.1 
+[] [info] Run simulation decoupled from realtime, with fixed timestep: 0.01
+[] [info] Generated seed 3262757838
+[] [info] Loading /tmp/trigger_integration_test.xosc (v1.0)
+[] [info] 0 variables
+[] [warn] No OpenDRIVE file specified, continue without
+[] [info] 3D model search paths attempted for file car_white.osgb:
+[] [info]   car_white.osgb
+[] [info]   /tmp/./car_white.osgb
+[] [info]   .//../resources/models//./car_white.osgb
+[] [info]   /tmp/../models/./car_white.osgb
+[] [warn] 3D model car_white.osgb not located, using specified file path
+[] [info] Assigned 3D model car_white.osgb to vehicle Ego
+[] [info] Add and deactivate new object "Ego" (id 0)
+[] [info] 0 parameters
+[0.000] [info] Recording data to file sim.dat
+[0.000] [info] Init Ego TeleportAction initState -> startTransition -> runningState
+[0.000] [info] Starting teleport Action
+[0.000] [info] Ego New position:
+[0.000] [info] Pos(0.00, 0.00, 0.00) Rot(0.00, 0.00, 0.00) roadId 4294967295 laneId 0 s 0.00 offset 0.00 t 0.00
+[0.000] [info] storyBoard initState -> startTransition -> runningState
+[0.000] [info] TriggerTestStory initState -> startTransition -> runningState
+[0.000] [info] DelayedAct initState -> initToStandbyTransition -> standbyState
+[0.000] [info] Init Ego TeleportAction runningState -> endTransition -> completeState
+[2.010] [info] SimTime_2: true, delay: 0.00, 2.0100 > 2.0000, edge: none
+[2.010] [info] Trigger /------------------------------------------------
+[2.010] [info] Group 0:
+[2.010] [info] SimTime_2: true
+[2.010] [info] Trigger  ------------------------------------------------/
+[2.010] [info] DelayedAct standbyState -> startTransition -> runningState
+[2.010] [info] EgoManeuverGroup initState -> startTransition -> runningState
+[2.010] [info] SpeedManeuver initState -> startTransition -> runningState
+[2.010] [info] SpeedEvent initState -> initToStandbyTransition -> standbyState
+[2.010] [info] SimTime_1: true, delay: 0.00, 2.0100 > 1.0000, edge: none
+[2.010] [info] Trigger /------------------------------------------------
+[2.010] [info] Group 0:
+[2.010] [info] SimTime_1: true
+[2.010] [info] Trigger  ------------------------------------------------/
+[2.010] [info] SpeedEvent standbyState -> startTransition -> runningState
+[2.010] [info] action initState -> startTransition -> runningState
+[6.010] [info] StopCondition: true, delay: 0.00, 6.0100 > 6.0000, edge: rising
+[6.010] [info] Trigger /------------------------------------------------
+[6.010] [info] Group 0:
+[6.010] [info] StopCondition: true
+[6.010] [info] Trigger  ------------------------------------------------/
+[6.010] [info] action runningState -> stopTransition -> completeState
+[6.010] [info] SpeedEvent complete after 1 execution
+[6.010] [info] SpeedEvent runningState -> endTransition -> completeState
+[6.010] [info] SpeedManeuver runningState -> endTransition -> completeState
+[6.010] [info] EgoManeuverGroup complete after 1 execution
+[6.010] [info] EgoManeuverGroup runningState -> endTransition -> completeState
+[6.010] [info] DelayedAct runningState -> endTransition -> completeState
+[6.010] [info] TriggerTestStory runningState -> endTransition -> completeState
+[6.010] [info] storyBoard runningState -> stopTransition -> completeState
+[6.010] [info] Closing

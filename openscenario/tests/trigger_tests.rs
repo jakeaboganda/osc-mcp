@@ -547,6 +547,8 @@ fn test_valid_entity_reference_succeeds() {
     // Should succeed (validation passes)
     let result = scenario.to_xml();
     assert!(result.is_ok());
+    let xml = result.unwrap();
+    assert!(xml.contains("<ByEntityCondition>"));
 }
 
 #[test]
@@ -664,4 +666,81 @@ fn test_mixed_valid_invalid_entity_refs() {
         }
         _ => panic!("Expected InvalidEntityRef error"),
     }
+}
+
+#[test]
+fn test_by_entity_condition_xml_generation() {
+    use openscenario::entities::{VehicleCategory, VehicleParams};
+    
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    
+    // Add two vehicles
+    let params = VehicleParams {
+        catalog: None,
+        vehicle_category: VehicleCategory::Car,
+        properties: None,
+    };
+    scenario.add_vehicle("Ego", params.clone()).unwrap();
+    scenario.add_vehicle("Target", params).unwrap();
+    scenario.set_initial_position("Ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+    scenario.set_initial_position("Target", Position::world(10.0, 0.0, 0.0, 0.0)).unwrap();
+    
+    // Create ByEntityCondition with SpeedCondition
+    let triggering = TriggeringEntities {
+        rule: TriggeringEntitiesRule::Any,
+        entity_refs: vec!["Ego".to_string(), "Target".to_string()],
+    };
+    
+    let speed_cond = SpeedCondition {
+        value: 30.0,
+        rule: Rule::GreaterThan,
+    };
+    
+    let by_entity = ByEntityCondition {
+        triggering_entities: triggering,
+        entity_condition: EntityCondition::Speed(speed_cond),
+    };
+    
+    let condition = Condition {
+        name: "SpeedTrigger".to_string(),
+        delay: 0.0,
+        condition_edge: ConditionEdge::None,
+        kind: ConditionKind::ByEntity(by_entity),
+    };
+    
+    let condition_group = ConditionGroup::new(vec![condition]);
+    let trigger = Trigger::new(condition_group);
+    
+    scenario.add_story("TestStory").unwrap();
+    scenario.add_act("TestStory", "TestAct").unwrap();
+    scenario
+        .set_act_start_trigger("TestStory", "TestAct", trigger)
+        .unwrap();
+    
+    // Generate XML and verify structure
+    let result = scenario.to_xml();
+    assert!(result.is_ok());
+    let xml = result.unwrap();
+    
+    // Verify ByEntityCondition structure
+    assert!(xml.contains("<ByEntityCondition>"));
+    assert!(xml.contains("</ByEntityCondition>"));
+    
+    // Verify TriggeringEntities with rule attribute
+    assert!(xml.contains("<TriggeringEntities"));
+    assert!(xml.contains("triggeringEntitiesRule=\"any\""));
+    assert!(xml.contains("</TriggeringEntities>"));
+    
+    // Verify EntityRef elements
+    assert!(xml.contains("<EntityRef entityRef=\"Ego\""));
+    assert!(xml.contains("<EntityRef entityRef=\"Target\""));
+    
+    // Verify EntityCondition wrapper
+    assert!(xml.contains("<EntityCondition>"));
+    assert!(xml.contains("</EntityCondition>"));
+    
+    // Verify SpeedCondition with attributes
+    assert!(xml.contains("<SpeedCondition"));
+    assert!(xml.contains("value=\"30\""));
+    assert!(xml.contains("rule=\"greaterThan\""));
 }

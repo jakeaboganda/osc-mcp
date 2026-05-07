@@ -607,9 +607,46 @@ impl Scenario {
                     }
                 }
                 
-                // Entity validation passed - TriggeringEntities and EntityCondition XML generation will be added in Task 10
-                // For now, write placeholder XML to avoid compile errors
+                // Validation passed - write full ByEntityCondition XML
+                
+                // Write <ByEntityCondition>
                 writer.write_event(XmlEvent::Start(BytesStart::new("ByEntityCondition")))?;
+                
+                // Write <TriggeringEntities>
+                let mut triggering_start = BytesStart::new("TriggeringEntities");
+                triggering_start.push_attribute((
+                    "triggeringEntitiesRule",
+                    triggering_entities_rule_to_string(&by_entity.triggering_entities.rule),
+                ));
+                writer.write_event(XmlEvent::Start(triggering_start))?;
+                
+                // Write <EntityRef> for each entity
+                for entity_ref in &by_entity.triggering_entities.entity_refs {
+                    let mut entity_ref_elem = BytesStart::new("EntityRef");
+                    entity_ref_elem.push_attribute(("entityRef", entity_ref.as_str()));
+                    writer.write_event(XmlEvent::Empty(entity_ref_elem))?;
+                }
+                
+                // Close </TriggeringEntities>
+                writer.write_event(XmlEvent::End(BytesEnd::new("TriggeringEntities")))?;
+                
+                // Write <EntityCondition>
+                writer.write_event(XmlEvent::Start(BytesStart::new("EntityCondition")))?;
+                
+                // Write specific condition (SpeedCondition for now)
+                match &by_entity.entity_condition {
+                    crate::storyboard::EntityCondition::Speed(speed_cond) => {
+                        let mut speed_elem = BytesStart::new("SpeedCondition");
+                        speed_elem.push_attribute(("value", speed_cond.value.to_string().as_str()));
+                        speed_elem.push_attribute(("rule", rule_to_string(&speed_cond.rule)));
+                        writer.write_event(XmlEvent::Empty(speed_elem))?;
+                    }
+                }
+                
+                // Close </EntityCondition>
+                writer.write_event(XmlEvent::End(BytesEnd::new("EntityCondition")))?;
+                
+                // Close </ByEntityCondition>
                 writer.write_event(XmlEvent::End(BytesEnd::new("ByEntityCondition")))?;
             }
         }
@@ -905,5 +942,13 @@ pub fn rule_to_string(rule: &crate::storyboard::Rule) -> &'static str {
         crate::storyboard::Rule::GreaterThan => "greaterThan",
         crate::storyboard::Rule::LessThan => "lessThan",
         crate::storyboard::Rule::EqualTo => "equalTo",
+    }
+}
+
+/// Convert a TriggeringEntitiesRule enum value to its OpenSCENARIO 1.0 XML string representation.
+fn triggering_entities_rule_to_string(rule: &crate::storyboard::TriggeringEntitiesRule) -> &'static str {
+    match rule {
+        crate::storyboard::TriggeringEntitiesRule::Any => "any",
+        crate::storyboard::TriggeringEntitiesRule::All => "all",
     }
 }

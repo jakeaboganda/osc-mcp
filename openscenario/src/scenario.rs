@@ -55,18 +55,18 @@ impl Scenario {
         value: impl Into<String>,
     ) -> Result<()> {
         let name = name.into();
-        
+
         // Check for duplicate parameter names
         if self.parameters.iter().any(|p| p.name == name) {
             return Err(ScenarioError::ParameterConflict { name });
         }
-        
+
         self.parameters.push(ParameterDeclaration {
             name,
             parameter_type,
             value: value.into(),
         });
-        
+
         Ok(())
     }
 
@@ -781,13 +781,9 @@ mod parameter_tests {
     #[test]
     fn test_add_parameter_declaration() {
         let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
-        
-        let result = scenario.add_parameter(
-            "MaxSpeed",
-            ParameterType::Double,
-            "60.0",
-        );
-        
+
+        let result = scenario.add_parameter("MaxSpeed", ParameterType::Double, "60.0");
+
         assert!(result.is_ok());
         assert_eq!(scenario.parameters.len(), 1);
         assert_eq!(scenario.parameters[0].name, "MaxSpeed");
@@ -796,30 +792,48 @@ mod parameter_tests {
     #[test]
     fn test_add_parameter_duplicate_error() {
         let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
-        scenario.add_parameter("Speed", ParameterType::Double, "50.0").unwrap();
-        
+        scenario
+            .add_parameter("Speed", ParameterType::Double, "50.0")
+            .unwrap();
+
         let result = scenario.add_parameter("Speed", ParameterType::Integer, "60");
-        assert!(matches!(result, Err(ScenarioError::ParameterConflict { name }) if name == "Speed"));
+        assert!(
+            matches!(result, Err(ScenarioError::ParameterConflict { name }) if name == "Speed")
+        );
     }
 
     #[test]
     fn test_add_parameter_all_types() {
         let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
-        
+
         // Integer
-        scenario.add_parameter("Count", ParameterType::Integer, "42").unwrap();
-        assert_eq!(scenario.parameters[0].parameter_type, ParameterType::Integer);
-        
+        scenario
+            .add_parameter("Count", ParameterType::Integer, "42")
+            .unwrap();
+        assert_eq!(
+            scenario.parameters[0].parameter_type,
+            ParameterType::Integer
+        );
+
         // Double (already tested, but verify here too)
-        scenario.add_parameter("Speed", ParameterType::Double, "60.0").unwrap();
+        scenario
+            .add_parameter("Speed", ParameterType::Double, "60.0")
+            .unwrap();
         assert_eq!(scenario.parameters[1].parameter_type, ParameterType::Double);
-        
+
         // String
-        scenario.add_parameter("State", ParameterType::String, "active").unwrap();
+        scenario
+            .add_parameter("State", ParameterType::String, "active")
+            .unwrap();
         assert_eq!(scenario.parameters[2].parameter_type, ParameterType::String);
-        
+
         // Boolean
-        scenario.add_parameter("Debug", ParameterType::Boolean, "true").unwrap();
-        assert_eq!(scenario.parameters[3].parameter_type, ParameterType::Boolean);
+        scenario
+            .add_parameter("Debug", ParameterType::Boolean, "true")
+            .unwrap();
+        assert_eq!(
+            scenario.parameters[3].parameter_type,
+            ParameterType::Boolean
+        );
     }
 }
