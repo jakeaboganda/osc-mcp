@@ -16,3 +16,6 @@ esmini-tests/sim.dat
 # Test output
 esmini-tests/scenarios/*.xosc
 openscenario_test/
+
+# esmini diagnostic logs
+openscenario/log.txt
