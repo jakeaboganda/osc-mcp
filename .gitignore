@@ -12,3 +12,7 @@ Cargo.lock
 *.dat
 esmini-tests/results/
 esmini-tests/sim.dat
+
+# Test output
+esmini-tests/scenarios/*.xosc
+openscenario_test/
