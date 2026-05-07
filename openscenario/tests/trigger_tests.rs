@@ -744,3 +744,229 @@ fn test_by_entity_condition_xml_generation() {
     assert!(xml.contains("value=\"30\""));
     assert!(xml.contains("rule=\"greaterThan\""));
 }
+
+#[test]
+fn test_speed_condition_all_rule_operators() {
+    use openscenario::entities::{VehicleCategory, VehicleParams};
+    
+    // Test all three Rule operators in SpeedCondition XML output
+    let test_cases = vec![
+        (Rule::GreaterThan, "greaterThan"),
+        (Rule::LessThan, "lessThan"),
+        (Rule::EqualTo, "equalTo"),
+    ];
+    
+    for (rule, expected_xml) in test_cases {
+        let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+        
+        // Add vehicle
+        let params = VehicleParams {
+            catalog: None,
+            vehicle_category: VehicleCategory::Car,
+            properties: None,
+        };
+        scenario.add_vehicle("Ego", params).unwrap();
+        scenario.set_initial_position("Ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+        
+        // Create SpeedCondition with the rule
+        let triggering = TriggeringEntities {
+            rule: TriggeringEntitiesRule::Any,
+            entity_refs: vec!["Ego".to_string()],
+        };
+        
+        let speed_cond = SpeedCondition {
+            value: 30.0,
+            rule: rule.clone(),
+        };
+        
+        let by_entity = ByEntityCondition {
+            triggering_entities: triggering,
+            entity_condition: EntityCondition::Speed(speed_cond),
+        };
+        
+        let condition = Condition {
+            name: format!("Speed_{:?}", rule),
+            delay: 0.0,
+            condition_edge: ConditionEdge::None,
+            kind: ConditionKind::ByEntity(by_entity),
+        };
+        
+        // Add to scenario
+        let cg = ConditionGroup::new(vec![condition]);
+        let trigger = Trigger::new(cg);
+        scenario.add_story("S").unwrap();
+        scenario.add_act("S", "A").unwrap();
+        scenario.set_act_start_trigger("S", "A", trigger).unwrap();
+        
+        // Verify XML contains correct rule attribute
+        let xml = scenario.to_xml().unwrap();
+        let expected_attr = format!("rule=\"{}\"", expected_xml);
+        assert!(xml.contains(&expected_attr), 
+                "Expected XML to contain '{}' for rule {:?}", expected_attr, rule);
+    }
+}
+
+#[test]
+fn test_triggering_entities_rule_xml() {
+    use openscenario::entities::{VehicleCategory, VehicleParams};
+    
+    // Test TriggeringEntitiesRule::Any with single entity
+    {
+        let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+        
+        let params = VehicleParams {
+            catalog: None,
+            vehicle_category: VehicleCategory::Car,
+            properties: None,
+        };
+        scenario.add_vehicle("Ego", params).unwrap();
+        scenario.set_initial_position("Ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+        
+        let triggering = TriggeringEntities {
+            rule: TriggeringEntitiesRule::Any,
+            entity_refs: vec!["Ego".to_string()],
+        };
+        
+        let speed_cond = SpeedCondition {
+            value: 25.0,
+            rule: Rule::GreaterThan,
+        };
+        
+        let by_entity = ByEntityCondition {
+            triggering_entities: triggering,
+            entity_condition: EntityCondition::Speed(speed_cond),
+        };
+        
+        let condition = Condition {
+            name: "SpeedAny".to_string(),
+            delay: 0.0,
+            condition_edge: ConditionEdge::None,
+            kind: ConditionKind::ByEntity(by_entity),
+        };
+        
+        let cg = ConditionGroup::new(vec![condition]);
+        let trigger = Trigger::new(cg);
+        scenario.add_story("S").unwrap();
+        scenario.add_act("S", "A").unwrap();
+        scenario.set_act_start_trigger("S", "A", trigger).unwrap();
+        
+        let xml = scenario.to_xml().unwrap();
+        assert!(xml.contains("triggeringEntitiesRule=\"any\""),
+                "Expected TriggeringEntitiesRule::Any to produce 'any' in XML");
+    }
+    
+    // Test TriggeringEntitiesRule::All with multiple entities
+    {
+        let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+        
+        let params = VehicleParams {
+            catalog: None,
+            vehicle_category: VehicleCategory::Car,
+            properties: None,
+        };
+        scenario.add_vehicle("Ego", params.clone()).unwrap();
+        scenario.add_vehicle("Target", params).unwrap();
+        scenario.set_initial_position("Ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+        scenario.set_initial_position("Target", Position::world(10.0, 0.0, 0.0, 0.0)).unwrap();
+        
+        let triggering = TriggeringEntities {
+            rule: TriggeringEntitiesRule::All,
+            entity_refs: vec!["Ego".to_string(), "Target".to_string()],
+        };
+        
+        let speed_cond = SpeedCondition {
+            value: 50.0,
+            rule: Rule::LessThan,
+        };
+        
+        let by_entity = ByEntityCondition {
+            triggering_entities: triggering,
+            entity_condition: EntityCondition::Speed(speed_cond),
+        };
+        
+        let condition = Condition {
+            name: "SpeedAll".to_string(),
+            delay: 0.0,
+            condition_edge: ConditionEdge::None,
+            kind: ConditionKind::ByEntity(by_entity),
+        };
+        
+        let cg = ConditionGroup::new(vec![condition]);
+        let trigger = Trigger::new(cg);
+        scenario.add_story("S").unwrap();
+        scenario.add_act("S", "A").unwrap();
+        scenario.set_act_start_trigger("S", "A", trigger).unwrap();
+        
+        let xml = scenario.to_xml().unwrap();
+        assert!(xml.contains("triggeringEntitiesRule=\"all\""),
+                "Expected TriggeringEntitiesRule::All to produce 'all' in XML");
+    }
+}
+
+#[test]
+fn test_multiple_entity_refs_xml() {
+    use openscenario::entities::{VehicleCategory, VehicleParams};
+    
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    
+    // Add three entities
+    let params = VehicleParams {
+        catalog: None,
+        vehicle_category: VehicleCategory::Car,
+        properties: None,
+    };
+    scenario.add_vehicle("Ego", params.clone()).unwrap();
+    scenario.add_vehicle("Target", params.clone()).unwrap();
+    scenario.add_vehicle("Adversary", params).unwrap();
+    
+    scenario.set_initial_position("Ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+    scenario.set_initial_position("Target", Position::world(10.0, 0.0, 0.0, 0.0)).unwrap();
+    scenario.set_initial_position("Adversary", Position::world(20.0, 0.0, 0.0, 0.0)).unwrap();
+    
+    // Create condition referencing all 3 entities
+    let triggering = TriggeringEntities {
+        rule: TriggeringEntitiesRule::Any,
+        entity_refs: vec![
+            "Ego".to_string(),
+            "Target".to_string(),
+            "Adversary".to_string(),
+        ],
+    };
+    
+    let speed_cond = SpeedCondition {
+        value: 40.0,
+        rule: Rule::GreaterThan,
+    };
+    
+    let by_entity = ByEntityCondition {
+        triggering_entities: triggering,
+        entity_condition: EntityCondition::Speed(speed_cond),
+    };
+    
+    let condition = Condition {
+        name: "MultiEntitySpeed".to_string(),
+        delay: 0.0,
+        condition_edge: ConditionEdge::None,
+        kind: ConditionKind::ByEntity(by_entity),
+    };
+    
+    let cg = ConditionGroup::new(vec![condition]);
+    let trigger = Trigger::new(cg);
+    scenario.add_story("S").unwrap();
+    scenario.add_act("S", "A").unwrap();
+    scenario.set_act_start_trigger("S", "A", trigger).unwrap();
+    
+    // Verify XML contains all 3 EntityRef elements
+    let xml = scenario.to_xml().unwrap();
+    assert!(xml.contains("<EntityRef entityRef=\"Ego\""),
+            "Expected XML to contain EntityRef for Ego");
+    assert!(xml.contains("<EntityRef entityRef=\"Target\""),
+            "Expected XML to contain EntityRef for Target");
+    assert!(xml.contains("<EntityRef entityRef=\"Adversary\""),
+            "Expected XML to contain EntityRef for Adversary");
+    
+    // Verify the count by counting occurrences of EntityRef
+    let entity_ref_count = xml.matches("<EntityRef").count();
+    assert_eq!(entity_ref_count, 3,
+               "Expected exactly 3 EntityRef elements, found {}", entity_ref_count);
+}
