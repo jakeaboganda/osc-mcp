@@ -958,6 +958,112 @@ impl Scenario {
         Ok(())
     }
 
+    pub fn add_synchronize_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        master_entity_ref: impl Into<String>,
+        target_position_master: crate::storyboard::TargetPositionMaster,
+        target_position: crate::storyboard::TargetPosition,
+        final_speed: Option<f64>,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+        let entity_ref_str = entity_ref.into();
+        let master_entity_ref_str = master_entity_ref.into();
+
+        // Validate entity references exist
+        if !self.entities.iter().any(|(name, _)| *name == entity_ref_str) {
+            return Err(ScenarioError::EntityNotFound {
+                entity: entity_ref_str,
+                context: "SynchronizeAction entity_ref".to_string(),
+            });
+        }
+
+        if !self.entities.iter().any(|(name, _)| *name == master_entity_ref_str) {
+            return Err(ScenarioError::EntityNotFound {
+                entity: master_entity_ref_str.clone(),
+                context: "SynchronizeAction master_entity_ref".to_string(),
+            });
+        }
+
+        // Validate final_speed if present
+        if let Some(speed) = final_speed {
+            if speed < 0.0 {
+                return Err(ScenarioError::InvalidValue {
+                    field: "final_speed".to_string(),
+                    reason: format!("final_speed cannot be negative (got {})", speed),
+                });
+            }
+        }
+
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+
+        // Then use ok_or_else with the pre-collected keys
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg =
+            act.maneuver_groups
+                .get_mut(&mg_name)
+                .ok_or_else(|| ScenarioError::EntityNotFound {
+                    entity: mg_name.clone(),
+                    context: format!("ManeuverGroup in act '{}'", act_name),
+                })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        let action = Action::Synchronize(crate::storyboard::SynchronizeAction {
+            entity_ref: entity_ref_str,
+            master_entity_ref: master_entity_ref_str,
+            target_position_master,
+            target_position,
+            final_speed,
+        });
+
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+                start_trigger: None,
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn add_position_action(
         &mut self,
         story: impl Into<String>,

@@ -101,6 +101,7 @@ pub enum Action {
     LongitudinalDistance(LongitudinalDistanceAction),
     FollowTrajectory(FollowTrajectoryAction),
     AssignRoute(AssignRouteAction),
+    Synchronize(SynchronizeAction),
     // More actions to be added
 }
 
@@ -217,6 +218,34 @@ pub struct Route {
 pub struct Waypoint {
     pub position: Position,
     pub route_strategy: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SynchronizeAction {
+    pub entity_ref: String,
+    pub master_entity_ref: String,
+    pub target_position_master: TargetPositionMaster,
+    pub target_position: TargetPosition,
+    pub final_speed: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TargetPositionMaster {
+    pub position: Position,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TargetPosition {
+    World(Position),
+    Relative(TargetPositionRelative),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TargetPositionRelative {
+    pub entity_ref: String,
+    pub dx: f64,
+    pub dy: f64,
+    pub dz: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

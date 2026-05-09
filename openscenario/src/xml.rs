@@ -1029,6 +1029,47 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("AssignRouteAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("RoutingAction")))?;
             }
+            Action::Synchronize(sync_action) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("SynchronizeAction")))?;
+
+                // Write entity reference
+                let mut entity_elem = BytesStart::new("EntityRef");
+                entity_elem.push_attribute(("entityRef", sync_action.entity_ref.as_str()));
+                writer.write_event(XmlEvent::Empty(entity_elem))?;
+
+                // Write target position master
+                writer.write_event(XmlEvent::Start(BytesStart::new("TargetPositionMaster")))?;
+                self.write_position(writer, &sync_action.target_position_master.position)?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("TargetPositionMaster")))?;
+
+                // Write target position
+                writer.write_event(XmlEvent::Start(BytesStart::new("TargetPosition")))?;
+                match &sync_action.target_position {
+                    crate::storyboard::TargetPosition::World(pos) => {
+                        self.write_position(writer, pos)?;
+                    }
+                    crate::storyboard::TargetPosition::Relative(rel) => {
+                        let mut rel_elem = BytesStart::new("RelativeWorldPosition");
+                        rel_elem.push_attribute(("entityRef", rel.entity_ref.as_str()));
+                        rel_elem.push_attribute(("dx", rel.dx.to_string().as_str()));
+                        rel_elem.push_attribute(("dy", rel.dy.to_string().as_str()));
+                        rel_elem.push_attribute(("dz", rel.dz.to_string().as_str()));
+                        writer.write_event(XmlEvent::Empty(rel_elem))?;
+                    }
+                }
+                writer.write_event(XmlEvent::End(BytesEnd::new("TargetPosition")))?;
+
+                // Write final speed if present
+                if let Some(speed) = sync_action.final_speed {
+                    writer.write_event(XmlEvent::Start(BytesStart::new("FinalSpeed")))?;
+                    let mut speed_elem = BytesStart::new("AbsoluteSpeed");
+                    speed_elem.push_attribute(("value", speed.to_string().as_str()));
+                    writer.write_event(XmlEvent::Empty(speed_elem))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("FinalSpeed")))?;
+                }
+
+                writer.write_event(XmlEvent::End(BytesEnd::new("SynchronizeAction")))?;
+            }
         }
 
         writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;
