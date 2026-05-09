@@ -100,6 +100,7 @@ pub enum Action {
     Distance(DistanceAction),
     LongitudinalDistance(LongitudinalDistanceAction),
     FollowTrajectory(FollowTrajectoryAction),
+    AssignRoute(AssignRouteAction),
     // More actions to be added
 }
 
@@ -198,6 +199,24 @@ pub struct Vertex {
 pub enum TimingMode {
     Timing,
     None,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssignRouteAction {
+    pub route: Route,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Route {
+    pub name: String,
+    pub closed: bool,
+    pub waypoints: Vec<Waypoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Waypoint {
+    pub position: Position,
+    pub route_strategy: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -878,6 +878,86 @@ impl Scenario {
         Ok(())
     }
 
+    pub fn add_assign_route_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        route: crate::storyboard::Route,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+
+        // Validate route has at least 2 waypoints
+        if route.waypoints.len() < 2 {
+            return Err(ScenarioError::InvalidValue {
+                field: "route.waypoints".to_string(),
+                reason: format!(
+                    "route must have at least 2 waypoints (got {})",
+                    route.waypoints.len()
+                ),
+            });
+        }
+
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+
+        // Then use ok_or_else with the pre-collected keys
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg =
+            act.maneuver_groups
+                .get_mut(&mg_name)
+                .ok_or_else(|| ScenarioError::EntityNotFound {
+                    entity: mg_name.clone(),
+                    context: format!("ManeuverGroup in act '{}'", act_name),
+                })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        let action = Action::AssignRoute(crate::storyboard::AssignRouteAction { route });
+
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+                start_trigger: None,
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn add_position_action(
         &mut self,
         story: impl Into<String>,

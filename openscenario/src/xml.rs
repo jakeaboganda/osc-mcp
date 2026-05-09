@@ -1008,6 +1008,27 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("FollowTrajectoryAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("RoutingAction")))?;
             }
+            Action::AssignRoute(assign_route) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("RoutingAction")))?;
+                writer.write_event(XmlEvent::Start(BytesStart::new("AssignRouteAction")))?;
+
+                // Write route
+                let mut route_elem = BytesStart::new("Route");
+                route_elem.push_attribute(("name", assign_route.route.name.as_str()));
+                route_elem.push_attribute(("closed", assign_route.route.closed.to_string().as_str()));
+                writer.write_event(XmlEvent::Start(route_elem))?;
+
+                // Write waypoints
+                for waypoint in &assign_route.route.waypoints {
+                    writer.write_event(XmlEvent::Start(BytesStart::new("Waypoint")))?;
+                    self.write_position(writer, &waypoint.position)?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("Waypoint")))?;
+                }
+
+                writer.write_event(XmlEvent::End(BytesEnd::new("Route")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("AssignRouteAction")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("RoutingAction")))?;
+            }
         }
 
         writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;
