@@ -97,6 +97,7 @@ pub enum Action {
     LaneChange(LaneChangeAction),
     Position(PositionAction),
     Distance(DistanceAction),
+    LongitudinalDistance(LongitudinalDistanceAction),
     // More actions to be added
 }
 
@@ -132,6 +133,37 @@ pub enum TransitionShape {
     Cubic,
     Sinusoidal,
     Step,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DynamicsShape {
+    Linear,
+    Cubic,
+    Sinusoidal,
+    Step,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DynamicsDimension {
+    Time,
+    Distance,
+    Rate,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransitionDynamics {
+    pub shape: DynamicsShape,
+    pub dimension: DynamicsDimension,
+    pub value: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LongitudinalDistanceAction {
+    pub entity_ref: String,
+    pub distance: f64,
+    pub freespace: bool,
+    pub continuous: bool,
+    pub dynamics: Option<TransitionDynamics>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

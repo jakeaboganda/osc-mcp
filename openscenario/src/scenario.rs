@@ -845,6 +845,97 @@ impl Scenario {
         Ok(())
     }
 
+    /// Add a longitudinal distance action to maintain distance from another entity
+    pub fn add_longitudinal_distance_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        distance: f64,
+        freespace: bool,
+        continuous: bool,
+        dynamics: Option<crate::storyboard::TransitionDynamics>,
+    ) -> Result<()> {
+        use crate::storyboard::LongitudinalDistanceAction;
+
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+        let entity_ref = entity_ref.into();
+
+        // Validate that the referenced entity exists
+        if !self.entities.contains_key(&entity_ref) {
+            return Err(ScenarioError::EntityNotFound {
+                entity: entity_ref.clone(),
+                context: "Referenced entity for LongitudinalDistanceAction".to_string(),
+            });
+        }
+
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+
+        // Then use ok_or_else with the pre-collected keys
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg =
+            act.maneuver_groups
+                .get_mut(&mg_name)
+                .ok_or_else(|| ScenarioError::EntityNotFound {
+                    entity: mg_name.clone(),
+                    context: format!("ManeuverGroup in act '{}'", act_name),
+                })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        let action = Action::LongitudinalDistance(LongitudinalDistanceAction {
+            entity_ref,
+            distance,
+            freespace,
+            continuous,
+            dynamics,
+        });
+
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+                start_trigger: None,
+            });
+        }
+
+        Ok(())
+    }
+
     /// Set a simple time-based stop trigger
     pub fn set_stop_time(&mut self, seconds: f64) {
         use crate::storyboard::StopTrigger;

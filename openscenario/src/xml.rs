@@ -873,6 +873,48 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalDistanceAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
             }
+            Action::LongitudinalDistance(ld_action) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalAction")))?;
+                
+                // Create opening tag with continuous attribute
+                let mut ld_elem = BytesStart::new("LongitudinalDistanceAction");
+                ld_elem.push_attribute(("continuous", ld_action.continuous.to_string().as_str()));
+                writer.write_event(XmlEvent::Start(ld_elem))?;
+
+                // Write entity reference
+                let mut entity_elem = BytesStart::new("EntityRef");
+                entity_elem.push_attribute(("entityRef", ld_action.entity_ref.as_str()));
+                writer.write_event(XmlEvent::Empty(entity_elem))?;
+
+                // Write dynamics if present
+                if let Some(dynamics) = &ld_action.dynamics {
+                    writer.write_event(XmlEvent::Start(BytesStart::new(
+                        "DynamicConstraints",
+                    )))?;
+                    let mut dyn_elem = BytesStart::new("Dynamics");
+                    dyn_elem.push_attribute((
+                        "dynamicsShape",
+                        format!("{:?}", dynamics.shape).to_lowercase().as_str(),
+                    ));
+                    dyn_elem.push_attribute(("value", dynamics.value.to_string().as_str()));
+                    dyn_elem.push_attribute((
+                        "dynamicsDimension",
+                        format!("{:?}", dynamics.dimension).to_lowercase().as_str(),
+                    ));
+                    writer.write_event(XmlEvent::Empty(dyn_elem))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("DynamicConstraints")))?;
+                }
+
+                // Write distance
+                let mut dist_elem = BytesStart::new("Distance");
+                dist_elem.push_attribute(("value", ld_action.distance.to_string().as_str()));
+                dist_elem
+                    .push_attribute(("freespace", ld_action.freespace.to_string().as_str()));
+                writer.write_event(XmlEvent::Empty(dist_elem))?;
+
+                writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalDistanceAction")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
+            }
         }
 
         writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;
