@@ -99,6 +99,7 @@ pub enum Action {
     Position(PositionAction),
     Distance(DistanceAction),
     LongitudinalDistance(LongitudinalDistanceAction),
+    FollowTrajectory(FollowTrajectoryAction),
     // More actions to be added
 }
 
@@ -171,6 +172,32 @@ pub struct LongitudinalDistanceAction {
     pub freespace: bool,
     pub continuous: bool,
     pub dynamics: Option<TransitionDynamics>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FollowTrajectoryAction {
+    pub trajectory: Trajectory,
+    pub timing_mode: TimingMode,
+    pub initial_distance_offset: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Trajectory {
+    pub name: String,
+    pub closed: bool,
+    pub vertices: Vec<Vertex>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Vertex {
+    pub time: f64,
+    pub position: Position,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TimingMode {
+    Timing,
+    None,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

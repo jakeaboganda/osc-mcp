@@ -782,6 +782,102 @@ impl Scenario {
         Ok(())
     }
 
+    pub fn add_follow_trajectory_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        trajectory: crate::storyboard::Trajectory,
+        timing_mode: crate::storyboard::TimingMode,
+        initial_distance_offset: Option<f64>,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+
+        // Validate trajectory has at least 2 vertices
+        if trajectory.vertices.len() < 2 {
+            return Err(ScenarioError::InvalidValue {
+                field: "trajectory.vertices".to_string(),
+                reason: format!(
+                    "trajectory must have at least 2 vertices (got {})",
+                    trajectory.vertices.len()
+                ),
+            });
+        }
+
+        // Validate initial_distance_offset if present
+        if let Some(offset) = initial_distance_offset {
+            if offset < 0.0 {
+                return Err(ScenarioError::InvalidValue {
+                    field: "initial_distance_offset".to_string(),
+                    reason: format!("offset must be non-negative (got {})", offset),
+                });
+            }
+        }
+
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+
+        // Then use ok_or_else with the pre-collected keys
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg =
+            act.maneuver_groups
+                .get_mut(&mg_name)
+                .ok_or_else(|| ScenarioError::EntityNotFound {
+                    entity: mg_name.clone(),
+                    context: format!("ManeuverGroup in act '{}'", act_name),
+                })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        let action = Action::FollowTrajectory(crate::storyboard::FollowTrajectoryAction {
+            trajectory,
+            timing_mode,
+            initial_distance_offset,
+        });
+
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+                start_trigger: None,
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn add_position_action(
         &mut self,
         story: impl Into<String>,

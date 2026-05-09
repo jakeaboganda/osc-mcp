@@ -955,6 +955,59 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalDistanceAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
             }
+            Action::FollowTrajectory(follow_traj) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("RoutingAction")))?;
+                
+                // Create FollowTrajectoryAction with timing mode and optional offset
+                let mut follow_elem = BytesStart::new("FollowTrajectoryAction");
+                if let Some(offset) = follow_traj.initial_distance_offset {
+                    follow_elem.push_attribute(("initialDistanceOffset", offset.to_string().as_str()));
+                }
+                writer.write_event(XmlEvent::Start(follow_elem))?;
+
+                // Write trajectory
+                let mut traj_elem = BytesStart::new("Trajectory");
+                traj_elem.push_attribute(("name", follow_traj.trajectory.name.as_str()));
+                traj_elem.push_attribute(("closed", follow_traj.trajectory.closed.to_string().as_str()));
+                writer.write_event(XmlEvent::Start(traj_elem))?;
+
+                // Write polyline with vertices
+                writer.write_event(XmlEvent::Start(BytesStart::new("Polyline")))?;
+                
+                for vertex in &follow_traj.trajectory.vertices {
+                    let mut vertex_elem = BytesStart::new("Vertex");
+                    vertex_elem.push_attribute(("time", vertex.time.to_string().as_str()));
+                    writer.write_event(XmlEvent::Start(vertex_elem))?;
+                    
+                    self.write_position(writer, &vertex.position)?;
+                    
+                    writer.write_event(XmlEvent::End(BytesEnd::new("Vertex")))?;
+                }
+                
+                writer.write_event(XmlEvent::End(BytesEnd::new("Polyline")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("Trajectory")))?;
+
+                // Write timing mode if Timing
+                match follow_traj.timing_mode {
+                    crate::storyboard::TimingMode::Timing => {
+                        writer.write_event(XmlEvent::Start(BytesStart::new("TimeReference")))?;
+                        writer.write_event(XmlEvent::Start(BytesStart::new("Timing")))?;
+                        let mut timing_elem = BytesStart::new("AbsoluteTime");
+                        timing_elem.push_attribute(("value", "0"));
+                        writer.write_event(XmlEvent::Empty(timing_elem))?;
+                        writer.write_event(XmlEvent::End(BytesEnd::new("Timing")))?;
+                        writer.write_event(XmlEvent::End(BytesEnd::new("TimeReference")))?;
+                    }
+                    crate::storyboard::TimingMode::None => {
+                        writer.write_event(XmlEvent::Start(BytesStart::new("TimeReference")))?;
+                        writer.write_event(XmlEvent::Empty(BytesStart::new("None")))?;
+                        writer.write_event(XmlEvent::End(BytesEnd::new("TimeReference")))?;
+                    }
+                }
+
+                writer.write_event(XmlEvent::End(BytesEnd::new("FollowTrajectoryAction")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("RoutingAction")))?;
+            }
         }
 
         writer.write_event(XmlEvent::End(BytesEnd::new("PrivateAction")))?;
