@@ -104,8 +104,7 @@ pub enum Action {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpeedAction {
     pub target_speed: f64,
-    pub transition_duration: f64,
-    pub shape: TransitionShape,
+    pub dynamics: TransitionDynamics,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

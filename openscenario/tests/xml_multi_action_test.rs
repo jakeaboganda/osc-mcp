@@ -1,5 +1,5 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
-use openscenario::storyboard::TransitionShape;
+use openscenario::storyboard::{TransitionShape, TransitionDynamics, DynamicsShape, DynamicsDimension};
 use openscenario::{OpenScenarioVersion, Position, Scenario};
 
 #[test]
@@ -41,8 +41,11 @@ fn test_multiple_actions_per_entity_export() {
             "test_maneuver",
             "speed_event",
             30.0,
-            1.0,
-            TransitionShape::Step,
+        TransitionDynamics {
+            shape: DynamicsShape::Step,
+            dimension: DynamicsDimension::Time,
+            value: 1.0,
+        },
         )
         .unwrap();
 
@@ -120,8 +123,11 @@ fn test_multiple_actions_same_event() {
             "test_maneuver",
             "combined_event", // SAME event name
             30.0,
-            1.0,
-            TransitionShape::Step,
+            TransitionDynamics {
+                shape: DynamicsShape::Step,
+                dimension: DynamicsDimension::Time,
+                value: 1.0,
+            },
         )
         .unwrap();
 

@@ -1,5 +1,5 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
-use openscenario::storyboard::TransitionShape;
+use openscenario::storyboard::{TransitionShape, TransitionDynamics, DynamicsShape, DynamicsDimension};
 use openscenario::{OpenScenarioVersion, Scenario};
 
 #[test]
@@ -43,8 +43,11 @@ fn test_add_speed_action() {
         "maneuver1",
         "event1",
         50.0,
-        5.0,
-        TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 5.0,
+        },
     );
 
     assert!(result.is_ok());

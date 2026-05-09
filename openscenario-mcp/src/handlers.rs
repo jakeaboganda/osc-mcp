@@ -1,7 +1,7 @@
 use crate::server::ServerState;
 use anyhow::{anyhow, Result};
 use openscenario::entities::{CatalogReference, VehicleCategory, VehicleParams};
-use openscenario::storyboard::TransitionShape;
+use openscenario::storyboard::{TransitionShape, TransitionDynamics, DynamicsShape, DynamicsDimension};
 use openscenario::validation::XsdValidator;
 use openscenario::Position;
 use openscenario::{OpenScenarioVersion, Scenario};
@@ -174,8 +174,11 @@ pub fn handle_add_speed_action(
         &maneuver_name,
         event_name,
         speed,
-        duration,
-        TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: duration,
+        },
     )?;
 
     Ok(format!(

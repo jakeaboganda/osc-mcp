@@ -1,5 +1,5 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
-use openscenario::storyboard::TransitionShape;
+use openscenario::storyboard::{TransitionDynamics, DynamicsShape, DynamicsDimension};
 use openscenario::{OpenScenarioVersion, Position, Scenario};
 
 fn main() {
@@ -33,8 +33,11 @@ fn main() {
             "maneuver1",
             "event1",
             50.0,
-            5.0,
-            TransitionShape::Linear,
+            TransitionDynamics {
+                shape: DynamicsShape::Linear,
+                dimension: DynamicsDimension::Time,
+                value: 5.0,
+            },
         )
         .unwrap();
 

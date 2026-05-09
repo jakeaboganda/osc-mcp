@@ -7,6 +7,7 @@ use openscenario::entities::{VehicleCategory, VehicleParams};
 use openscenario::storyboard::{
     ByEntityCondition, Condition, ConditionEdge, ConditionGroup, ConditionKind, EntityCondition,
     Rule, SpeedCondition, TransitionShape, Trigger, TriggeringEntities, TriggeringEntitiesRule,
+    TransitionDynamics, DynamicsShape, DynamicsDimension,
 };
 use openscenario::{OpenScenarioVersion, Position, Scenario};
 use std::env;
@@ -142,8 +143,11 @@ fn test_speed_condition_integration_any_rule() {
             "SpeedManeuver",
             "SpeedEvent",
             20.0,
-            5.0,
-            TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 5.0,
+        },
         )
         .expect("Failed to add speed action");
 
@@ -319,8 +323,11 @@ fn test_speed_condition_integration_all_rule() {
             "SpeedManeuver",
             "SpeedEvent",
             25.0,
-            3.0,
-            TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 3.0,
+        },
         )
         .expect("Failed to add speed action");
 

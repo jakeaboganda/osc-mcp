@@ -805,10 +805,13 @@ impl Scenario {
                 let mut dyn_elem = BytesStart::new("SpeedActionDynamics");
                 dyn_elem.push_attribute((
                     "dynamicsShape",
-                    format!("{:?}", speed.shape).to_lowercase().as_str(),
+                    format!("{:?}", speed.dynamics.shape).to_lowercase().as_str(),
                 ));
-                dyn_elem.push_attribute(("value", speed.transition_duration.to_string().as_str()));
-                dyn_elem.push_attribute(("dynamicsDimension", "time"));
+                dyn_elem.push_attribute(("value", speed.dynamics.value.to_string().as_str()));
+                dyn_elem.push_attribute((
+                    "dynamicsDimension",
+                    format!("{:?}", speed.dynamics.dimension).to_lowercase().as_str(),
+                ));
                 writer.write_event(XmlEvent::Empty(dyn_elem))?;
 
                 writer.write_event(XmlEvent::Start(BytesStart::new("SpeedActionTarget")))?;

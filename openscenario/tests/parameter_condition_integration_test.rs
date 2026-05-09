@@ -1,6 +1,7 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
 use openscenario::storyboard::{
     Rule, Condition, ConditionGroup, TransitionShape, Trigger,
+    TransitionDynamics, DynamicsShape, DynamicsDimension,
 };
 use openscenario::{OpenScenarioVersion, ParameterType, Position, Scenario};
 
@@ -81,8 +82,11 @@ fn test_parameter_condition_end_to_end() {
             "maneuver1",
             "event1",
             20.0,
-            5.0,
-            TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 5.0,
+        },
         )
         .unwrap();
 

@@ -1,5 +1,5 @@
 use openscenario::entities::{VehicleCategory, VehicleParams};
-use openscenario::storyboard::TransitionShape;
+use openscenario::storyboard::{TransitionShape, TransitionDynamics, DynamicsShape, DynamicsDimension};
 use openscenario::{OpenScenarioVersion, Position, Scenario};
 
 #[test]
@@ -44,8 +44,11 @@ fn test_complete_scenario_workflow() {
             "speed_maneuver",
             "speed_event",
             30.0,
-            5.0,
-            TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 5.0,
+        },
         )
         .unwrap();
 
@@ -226,8 +229,11 @@ fn test_speed_action_with_invalid_parameters() {
     let result = scenario.add_speed_action(
         "story", "act", "mg", "maneuver", "event",
         -10.0, // Invalid negative speed
-        5.0,
-        TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 5.0,
+        },
     );
     assert!(result.is_err());
 }
@@ -252,8 +258,11 @@ fn test_speed_action_with_zero_duration() {
     let result = scenario.add_speed_action(
         "story", "act", "mg", "maneuver", "event",
         30.0,
-        0.0, // Invalid zero duration
-        TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 0.0, // Invalid zero duration
+        },
     );
     assert!(result.is_err());
 }
@@ -514,8 +523,11 @@ fn test_infinite_values_in_speed_action() {
     let result = scenario.add_speed_action(
         "story", "act", "mg", "maneuver", "event",
         f64::INFINITY, // Invalid infinite speed
-        5.0,
-        TransitionShape::Linear,
+        TransitionDynamics {
+            shape: DynamicsShape::Linear,
+            dimension: DynamicsDimension::Time,
+            value: 5.0,
+        },
     );
     assert!(result.is_err());
 }

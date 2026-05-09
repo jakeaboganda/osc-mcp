@@ -534,8 +534,7 @@ impl Scenario {
         maneuver: impl Into<String>,
         event: impl Into<String>,
         target_speed: f64,
-        duration: f64,
-        shape: TransitionShape,
+        dynamics: crate::storyboard::TransitionDynamics,
     ) -> Result<()> {
         let story_name = story.into();
         let act_name = act.into();
@@ -550,10 +549,10 @@ impl Scenario {
                 reason: format!("speed cannot be negative (got {})", target_speed),
             });
         }
-        if duration <= 0.0 {
+        if dynamics.value <= 0.0 {
             return Err(ScenarioError::InvalidValue {
-                field: "duration".to_string(),
-                reason: format!("duration must be positive (got {})", duration),
+                field: "dynamics.value".to_string(),
+                reason: format!("dynamics value must be positive (got {})", dynamics.value),
             });
         }
 
@@ -597,8 +596,7 @@ impl Scenario {
 
         let action = Action::Speed(SpeedAction {
             target_speed,
-            transition_duration: duration,
-            shape,
+            dynamics,
         });
 
         // Find or create event
