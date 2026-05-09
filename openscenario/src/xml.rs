@@ -852,6 +852,43 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("LaneChangeAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LateralAction")))?;
             }
+            Action::LaneOffset(lane_offset) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("LateralAction")))?;
+                
+                // Create LaneOffsetAction opening tag with continuous attribute
+                let mut lane_offset_elem = BytesStart::new("LaneOffsetAction");
+                lane_offset_elem.push_attribute(("continuous", lane_offset.continuous.to_string().as_str()));
+                writer.write_event(XmlEvent::Start(lane_offset_elem))?;
+
+                // Write dynamics if present
+                if let Some(dynamics) = &lane_offset.dynamics {
+                    writer.write_event(XmlEvent::Start(BytesStart::new(
+                        "LaneOffsetActionDynamics",
+                    )))?;
+                    let mut dyn_elem = BytesStart::new("Dynamics");
+                    dyn_elem.push_attribute((
+                        "dynamicsShape",
+                        format!("{:?}", dynamics.shape).to_lowercase().as_str(),
+                    ));
+                    dyn_elem.push_attribute(("value", dynamics.value.to_string().as_str()));
+                    dyn_elem.push_attribute((
+                        "dynamicsDimension",
+                        format!("{:?}", dynamics.dimension).to_lowercase().as_str(),
+                    ));
+                    writer.write_event(XmlEvent::Empty(dyn_elem))?;
+                    writer.write_event(XmlEvent::End(BytesEnd::new("LaneOffsetActionDynamics")))?;
+                }
+
+                // Write target offset
+                writer.write_event(XmlEvent::Start(BytesStart::new("LaneOffsetTarget")))?;
+                let mut target_elem = BytesStart::new("AbsoluteTargetLaneOffset");
+                target_elem.push_attribute(("value", lane_offset.target_offset.to_string().as_str()));
+                writer.write_event(XmlEvent::Empty(target_elem))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("LaneOffsetTarget")))?;
+
+                writer.write_event(XmlEvent::End(BytesEnd::new("LaneOffsetAction")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("LateralAction")))?;
+            }
             Action::Position(position_action) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("TeleportAction")))?;
                 self.write_position(writer, &position_action.position)?;

@@ -95,6 +95,7 @@ impl Event {
 pub enum Action {
     Speed(SpeedAction),
     LaneChange(LaneChangeAction),
+    LaneOffset(LaneOffsetAction),
     Position(PositionAction),
     Distance(DistanceAction),
     LongitudinalDistance(LongitudinalDistanceAction),
@@ -112,6 +113,13 @@ pub struct LaneChangeAction {
     pub target_lane_offset: f64,
     pub transition_duration: f64,
     pub shape: TransitionShape,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LaneOffsetAction {
+    pub target_offset: f64,
+    pub continuous: bool,
+    pub dynamics: Option<TransitionDynamics>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
