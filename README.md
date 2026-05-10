@@ -9,13 +9,25 @@ Use natural language with AI assistants (Claude, ChatGPT, OpenClaw) to create co
 
 ---
 
+## What Problem Does This Solve?
+
+Testing autonomous vehicles requires thousands of scenarios: lane changes, emergency braking, pedestrian crossings, ACC behavior, cut-ins, and more. Writing these scenarios manually in OpenSCENARIO XML is tedious, error-prone, and requires deep knowledge of the specification.
+
+**This project lets you describe scenarios in plain English to an AI assistant**, which generates spec-compliant OpenSCENARIO XML automatically. No coding required.
+
+**Example**: Instead of writing 200 lines of XML, you say: *"Create a highway scenario where a vehicle performs an emergency brake and the follower must react within 2 seconds"* — and the AI builds it for you.
+
+---
+
 ## 🤖 MCP Server (Primary Interface)
 
 The **primary way to use this project**. Talk to AI assistants to create OpenSCENARIO test scenarios through natural conversation - no Rust coding required.
 
 ### What is MCP?
 
-[Model Context Protocol (MCP)](https://modelcontextprotocol.io/) lets AI assistants like Claude, ChatGPT, or OpenClaw use specialized tools. This server provides 7 tools for building autonomous driving test scenarios.
+MCP (Model Context Protocol) is how AI assistants like Claude and ChatGPT connect to specialized tools. Once configured, you can talk naturally to your AI assistant and it will use this server to build scenarios for you.
+
+**Think of it as**: Giving your AI assistant a "scenario building toolbox" that it can use on your behalf.
 
 ### Quick Start with MCP
 
@@ -31,30 +43,38 @@ cargo run --release --bin openscenario-mcp
 # 3. Connect from your AI assistant (OpenClaw, Claude Desktop, etc.)
 # See MCP setup guide below
 
-# 4. Start creating scenarios with natural language!
+# 4. Start creating scenarios!
+# Open your AI assistant (Claude Desktop, ChatGPT, OpenClaw) and say:
+#   "Create a highway ACC test scenario with two vehicles"
+# The AI will automatically use the MCP tools to build the scenario for you.
 ```
 
 ### Example: Creating an ACC Scenario with AI
 
+A realistic conversation showing how the AI helps you build a scenario:
+
 ```
-You: Create a highway ACC test scenario with two vehicles
+You: I need to test adaptive cruise control. Can you help me create a scenario?
 
-AI: [Uses create_scenario tool]
-    Created scenario "highway_acc" with OpenSCENARIO 1.2
+AI: Sure! I can create an OpenSCENARIO test scenario. What kind of ACC behavior 
+    do you want to test?
 
-You: Add a lead vehicle at position x=50, y=0 and a follower at x=0, y=0
+You: Two vehicles on a highway. The follower should maintain a 2-second time 
+     headway from the lead vehicle.
 
-AI: [Uses add_vehicle and set_position tools]
-    Added "lead_vehicle" at (50, 0, 0)
-    Added "follower_vehicle" at (0, 0, 0)
+AI: Got it. Let me create that for you.
+    [Uses create_scenario, add_vehicle, set_position tools]
+    
+    I've created a scenario with:
+    - Lead vehicle at x=50m, y=0
+    - Follower vehicle at x=0, y=0
+    - Both vehicles starting at 30 m/s
+    - Time headway condition (2.0s threshold)
+    - Speed profile action for ACC behavior
+    
+    Would you like me to export this to a file?
 
-You: Make the follower maintain a 2-second time headway from the lead
-
-AI: [Uses internal condition tools]
-    Added time headway condition with 2.0s threshold
-    Configured speed profile action for ACC behavior
-
-You: Export to acc_scenario.xosc
+You: Yes, save it as acc_scenario.xosc
 
 AI: [Uses export_xml tool]
     ✅ Exported to acc_scenario.xosc
