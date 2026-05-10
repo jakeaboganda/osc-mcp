@@ -651,6 +651,21 @@ impl Scenario {
                         
                         writer.write_event(XmlEvent::End(BytesEnd::new("ReachPositionCondition")))?;
                     }
+                    crate::storyboard::EntityCondition::TimeToCollision(ttc_cond) => {
+                        let mut ttc_elem = BytesStart::new("TimeToCollisionCondition");
+                        ttc_elem.push_attribute(("value", ttc_cond.value.to_string().as_str()));
+                        ttc_elem.push_attribute(("rule", rule_to_string(&ttc_cond.rule)));
+                        writer.write_event(XmlEvent::Start(ttc_elem))?;
+                        
+                        // Write the target entity
+                        writer.write_event(XmlEvent::Start(BytesStart::new("TimeToCollisionConditionTarget")))?;
+                        let mut entity_ref = BytesStart::new("EntityRef");
+                        entity_ref.push_attribute(("entityRef", ttc_cond.target_entity_ref.as_str()));
+                        writer.write_event(XmlEvent::Empty(entity_ref))?;
+                        writer.write_event(XmlEvent::End(BytesEnd::new("TimeToCollisionConditionTarget")))?;
+                        
+                        writer.write_event(XmlEvent::End(BytesEnd::new("TimeToCollisionCondition")))?;
+                    }
                 }
                 
                 // Close </EntityCondition>

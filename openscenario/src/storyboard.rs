@@ -463,7 +463,7 @@ pub struct ParameterCondition {
 /// Defines the three comparison operators supported by the OpenSCENARIO 1.0 specification
 /// for value-based conditions. Used in SimulationTimeCondition, ParameterCondition, and
 /// entity-based conditions like SpeedCondition.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Rule {
     /// Greater than operator (>)
     GreaterThan,
@@ -521,17 +521,33 @@ pub struct ReachPositionCondition {
     pub tolerance: f64,
 }
 
+/// Time to collision condition checks predicted collision time.
+///
+/// Triggers when the estimated time until collision between the triggering
+/// entity and a target entity meets the specified rule and value.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TimeToCollisionCondition {
+    /// Target entity to check collision with
+    pub target_entity_ref: String,
+    /// TTC value in seconds
+    pub value: f64,
+    /// Comparison rule (lessThan, greaterThan, etc.)
+    pub rule: Rule,
+}
+
 /// Entity-based condition types.
 ///
 /// Represents different conditions that can be checked against entity state.
-/// Currently supports speed and reach position conditions.
+/// Currently supports speed, reach position, and time-to-collision conditions.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EntityCondition {
     /// Speed-based condition
     Speed(SpeedCondition),
     /// Position-reaching condition
     ReachPosition(ReachPositionCondition),
-    // Future: Acceleration, TimeToCollision, etc.
+    /// Time-to-collision condition
+    TimeToCollision(TimeToCollisionCondition),
+    // Future: Acceleration, Collision, etc.
 }
 
 /// By-entity condition with triggering entities.

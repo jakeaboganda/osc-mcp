@@ -4,8 +4,9 @@ use crate::entities::{
 use crate::storyboard::{
     Act, Action, ByEntityCondition, Condition, ConditionEdge, ConditionGroup, ConditionKind,
     DistanceAction, EntityCondition, Event, LaneChangeAction, Maneuver, ManeuverGroup,
-    PositionAction, ReachPositionCondition, SpeedAction, Story, Storyboard, TransitionShape,
-    Trigger, TriggeringEntities, TriggeringEntitiesRule,
+    PositionAction, ReachPositionCondition, Rule, SpeedAction, Story, Storyboard,
+    TimeToCollisionCondition, TransitionShape, Trigger, TriggeringEntities,
+    TriggeringEntitiesRule,
 };
 use crate::Position;
 use crate::{OpenScenarioVersion, Result, ScenarioError};
@@ -1540,6 +1541,171 @@ impl Scenario {
         };
 
         let entity_condition = EntityCondition::ReachPosition(reach_condition);
+
+        let triggering_entities = TriggeringEntities {
+            rule: TriggeringEntitiesRule::Any,
+            entity_refs: vec![entity_name],
+        };
+
+        let by_entity_condition = ByEntityCondition {
+            triggering_entities,
+            entity_condition,
+        };
+
+        let condition = Condition {
+            name: format!("{}Condition", event_name),
+            delay,
+            condition_edge: edge,
+            kind: ConditionKind::ByEntity(by_entity_condition),
+        };
+
+        let condition_group = ConditionGroup {
+            conditions: vec![condition],
+        };
+
+        let trigger = Trigger {
+            condition_groups: vec![condition_group],
+        };
+
+        // Create or update event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.start_trigger = Some(trigger);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![],
+                start_trigger: Some(trigger),
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Add an event with a time-to-collision condition trigger.
+    ///
+    /// Creates an event that triggers when the time-to-collision between
+    /// the specified entity and a target entity meets the rule threshold.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_event_with_ttc_condition(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        target_entity_ref: impl Into<String>,
+        ttc_value: f64,
+        rule: Rule,
+    ) -> Result<()> {
+        self.add_event_with_ttc_condition_advanced(
+            story,
+            act,
+            mg,
+            maneuver,
+            event,
+            entity_ref,
+            target_entity_ref,
+            ttc_value,
+            rule,
+            ConditionEdge::None,
+            0.0,
+        )
+    }
+
+    /// Add an event with a time-to-collision condition trigger (advanced).
+    ///
+    /// Creates an event with full control over condition edge and delay.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_event_with_ttc_condition_advanced(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        target_entity_ref: impl Into<String>,
+        ttc_value: f64,
+        rule: Rule,
+        edge: ConditionEdge,
+        delay: f64,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+        let entity_name = entity_ref.into();
+        let target_name = target_entity_ref.into();
+
+        // Validate TTC value (must be non-negative)
+        if ttc_value < 0.0 {
+            return Err(ScenarioError::InvalidValue {
+                field: "ttc_value".to_string(),
+                reason: format!("TTC value cannot be negative (got {})", ttc_value),
+            });
+        }
+
+        // Validate both entities exist
+        let available: Vec<String> = self.entities.keys().cloned().collect();
+        if !self.entities.contains_key(&entity_name) {
+            return Err(ScenarioError::InvalidEntityRef {
+                entity: entity_name.clone(),
+                available: available.clone(),
+            });
+        }
+        if !self.entities.contains_key(&target_name) {
+            return Err(ScenarioError::InvalidEntityRef {
+                entity: target_name.clone(),
+                available,
+            });
+        }
+
+        // Get story
+        let story_keys: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: story_keys,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg = act
+            .maneuver_groups
+            .get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        // Create the TTC condition
+        let ttc_condition = TimeToCollisionCondition {
+            target_entity_ref: target_name,
+            value: ttc_value,
+            rule,
+        };
+
+        let entity_condition = EntityCondition::TimeToCollision(ttc_condition);
 
         let triggering_entities = TriggeringEntities {
             rule: TriggeringEntitiesRule::Any,
