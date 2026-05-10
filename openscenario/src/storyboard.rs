@@ -607,10 +607,26 @@ pub struct RelativeDistanceCondition {
     pub coordinate_system: Option<CoordinateSystem>,
 }
 
+/// Time headway condition checks time gap to a lead vehicle.
+///
+/// Triggers when the time gap between the triggering entity and a lead entity
+/// meets the specified rule and value. Time headway is distance divided by follower's speed.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TimeHeadwayCondition {
+    /// Lead entity to measure time gap to
+    pub entity_ref: String,
+    /// Time headway value in seconds
+    pub value: f64,
+    /// Comparison rule (lessThan, greaterThan, equalTo)
+    pub rule: Rule,
+    /// If true, distance between bounding boxes; if false, distance between reference points
+    pub freespace: bool,
+}
+
 /// Entity-based condition types.
 ///
 /// Represents different conditions that can be checked against entity state.
-/// Currently supports speed, reach position, time-to-collision, collision, and relative distance conditions.
+/// Currently supports speed, reach position, time-to-collision, collision, relative distance, and time headway conditions.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EntityCondition {
     /// Speed-based condition
@@ -623,7 +639,9 @@ pub enum EntityCondition {
     Collision(CollisionCondition),
     /// Relative distance condition
     RelativeDistance(RelativeDistanceCondition),
-    // Future: Acceleration, etc.
+    /// Time headway condition
+    TimeHeadway(TimeHeadwayCondition),
+    // Future: Acceleration, StandStill, etc.
 }
 
 /// By-entity condition with triggering entities.

@@ -704,6 +704,14 @@ impl Scenario {
                         
                         writer.write_event(XmlEvent::Empty(dist_elem))?;
                     }
+                    crate::storyboard::EntityCondition::TimeHeadway(headway_cond) => {
+                        let mut headway_elem = BytesStart::new("TimeHeadwayCondition");
+                        headway_elem.push_attribute(("entityRef", headway_cond.entity_ref.as_str()));
+                        headway_elem.push_attribute(("value", headway_cond.value.to_string().as_str()));
+                        headway_elem.push_attribute(("freespace", if headway_cond.freespace { "true" } else { "false" }));
+                        headway_elem.push_attribute(("rule", rule_to_string(&headway_cond.rule)));
+                        writer.write_event(XmlEvent::Empty(headway_elem))?;
+                    }
                 }
                 
                 // Close </EntityCondition>
