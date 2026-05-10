@@ -971,19 +971,21 @@ impl Scenario {
                 writer.write_event(XmlEvent::Start(BytesStart::new("LateralAction")))?;
                 writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeAction")))?;
 
-                writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeActionDynamics")))?;
-                let mut dyn_elem = BytesStart::new("Dynamics");
+                let mut dyn_elem = BytesStart::new("LaneChangeActionDynamics");
                 dyn_elem.push_attribute((
                     "dynamicsShape",
                     format!("{:?}", lane_change.shape).to_lowercase().as_str(),
                 ));
                 dyn_elem.push_attribute((
+                    "followingMode",
+                    "follow",
+                ));
+                dyn_elem.push_attribute(("dynamicsDimension", "time"));
+                dyn_elem.push_attribute((
                     "value",
                     lane_change.transition_duration.to_string().as_str(),
                 ));
-                dyn_elem.push_attribute(("dynamicsDimension", "time"));
                 writer.write_event(XmlEvent::Empty(dyn_elem))?;
-                writer.write_event(XmlEvent::End(BytesEnd::new("LaneChangeActionDynamics")))?;
 
                 writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeTarget")))?;
                 let mut target_elem = BytesStart::new("RelativeTargetLane");
@@ -1006,21 +1008,18 @@ impl Scenario {
 
                 // Write dynamics if present
                 if let Some(dynamics) = &lane_offset.dynamics {
-                    writer.write_event(XmlEvent::Start(BytesStart::new(
-                        "LaneOffsetActionDynamics",
-                    )))?;
-                    let mut dyn_elem = BytesStart::new("Dynamics");
+                    let mut dyn_elem = BytesStart::new("LaneOffsetActionDynamics");
                     dyn_elem.push_attribute((
                         "dynamicsShape",
                         format!("{:?}", dynamics.shape).to_lowercase().as_str(),
                     ));
-                    dyn_elem.push_attribute(("value", dynamics.value.to_string().as_str()));
+                    dyn_elem.push_attribute(("maxLateralAcc", "inf"));
                     dyn_elem.push_attribute((
                         "dynamicsDimension",
                         format!("{:?}", dynamics.dimension).to_lowercase().as_str(),
                     ));
+                    dyn_elem.push_attribute(("value", dynamics.value.to_string().as_str()));
                     writer.write_event(XmlEvent::Empty(dyn_elem))?;
-                    writer.write_event(XmlEvent::End(BytesEnd::new("LaneOffsetActionDynamics")))?;
                 }
 
                 // Write target offset
