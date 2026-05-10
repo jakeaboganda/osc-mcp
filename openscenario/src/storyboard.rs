@@ -535,10 +535,20 @@ pub struct TimeToCollisionCondition {
     pub rule: Rule,
 }
 
+/// Collision condition checks for actual collisions.
+///
+/// Triggers when the triggering entity collides with a target entity.
+/// Unlike TTC, this detects actual contact between entities.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CollisionCondition {
+    /// Target entity to detect collision with
+    pub target_entity_ref: String,
+}
+
 /// Entity-based condition types.
 ///
 /// Represents different conditions that can be checked against entity state.
-/// Currently supports speed, reach position, and time-to-collision conditions.
+/// Currently supports speed, reach position, time-to-collision, and collision conditions.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EntityCondition {
     /// Speed-based condition
@@ -547,7 +557,9 @@ pub enum EntityCondition {
     ReachPosition(ReachPositionCondition),
     /// Time-to-collision condition
     TimeToCollision(TimeToCollisionCondition),
-    // Future: Acceleration, Collision, etc.
+    /// Collision detection condition
+    Collision(CollisionCondition),
+    // Future: Acceleration, etc.
 }
 
 /// By-entity condition with triggering entities.

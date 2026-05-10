@@ -666,6 +666,16 @@ impl Scenario {
                         
                         writer.write_event(XmlEvent::End(BytesEnd::new("TimeToCollisionCondition")))?;
                     }
+                    crate::storyboard::EntityCondition::Collision(collision_cond) => {
+                        writer.write_event(XmlEvent::Start(BytesStart::new("CollisionCondition")))?;
+                        
+                        // Write the target entity
+                        let mut entity_ref = BytesStart::new("EntityRef");
+                        entity_ref.push_attribute(("entityRef", collision_cond.target_entity_ref.as_str()));
+                        writer.write_event(XmlEvent::Empty(entity_ref))?;
+                        
+                        writer.write_event(XmlEvent::End(BytesEnd::new("CollisionCondition")))?;
+                    }
                 }
                 
                 // Close </EntityCondition>
