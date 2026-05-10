@@ -886,6 +886,24 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("SpeedAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
             }
+            Action::SpeedProfile(profile) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalAction")))?;
+                
+                let mut profile_elem = BytesStart::new("SpeedProfileAction");
+                profile_elem.push_attribute(("followingMode", if profile.following_mode { "follow" } else { "position" }));
+                writer.write_event(XmlEvent::Start(profile_elem))?;
+
+                // Write speed profile entries
+                for entry in &profile.entries {
+                    let mut entry_elem = BytesStart::new("SpeedProfileEntry");
+                    entry_elem.push_attribute(("time", entry.position.to_string().as_str()));
+                    entry_elem.push_attribute(("speed", entry.speed.to_string().as_str()));
+                    writer.write_event(XmlEvent::Empty(entry_elem))?;
+                }
+
+                writer.write_event(XmlEvent::End(BytesEnd::new("SpeedProfileAction")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
+            }
             Action::LaneChange(lane_change) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("LateralAction")))?;
                 writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeAction")))?;

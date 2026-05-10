@@ -99,6 +99,7 @@ pub enum Action {
     Position(PositionAction),
     Distance(DistanceAction),
     Acceleration(AccelerationAction),
+    SpeedProfile(SpeedProfileAction),
     LongitudinalDistance(LongitudinalDistanceAction),
     FollowTrajectory(FollowTrajectoryAction),
     AssignRoute(AssignRouteAction),
@@ -142,6 +143,23 @@ pub struct DistanceAction {
 pub struct AccelerationAction {
     pub value: f64,  // acceleration in m/s² (can be negative for deceleration)
     pub dynamics: TransitionDynamics,
+}
+
+/// Speed profile entry: (time_or_distance, speed)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpeedProfileEntry {
+    /// Time (seconds) or distance (meters) depending on following_mode
+    pub position: f64,
+    /// Target speed at this position (m/s)
+    pub speed: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpeedProfileAction {
+    /// Speed profile waypoints
+    pub entries: Vec<SpeedProfileEntry>,
+    /// If true, position is time-based; if false, distance-based
+    pub following_mode: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

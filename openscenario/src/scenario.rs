@@ -1894,6 +1894,111 @@ impl Scenario {
 
         Ok(())
     }
+
+    /// Add a speed profile action to an event.
+    ///
+    /// Speed profile defines target speeds at specific time or distance points.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_speed_profile_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        waypoints: Vec<(f64, f64)>,  // (time_or_distance, speed)
+        following_mode: bool,  // true = time-based, false = distance-based
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+
+        // Validate waypoints
+        if waypoints.is_empty() {
+            return Err(ScenarioError::InvalidValue {
+                field: "waypoints".to_string(),
+                reason: "Speed profile must have at least one waypoint".to_string(),
+            });
+        }
+
+        // Validate each waypoint
+        for (i, (position, speed)) in waypoints.iter().enumerate() {
+            if *position < 0.0 {
+                return Err(ScenarioError::InvalidValue {
+                    field: format!("waypoint[{}].position", i),
+                    reason: format!("Position cannot be negative (got {})", position),
+                });
+            }
+            if *speed < 0.0 {
+                return Err(ScenarioError::InvalidValue {
+                    field: format!("waypoint[{}].speed", i),
+                    reason: format!("Speed cannot be negative (got {})", speed),
+                });
+            }
+        }
+
+        // Get story
+        let story_keys: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: story_keys,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg = act
+            .maneuver_groups
+            .get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        // Create speed profile entries
+        let entries: Vec<crate::storyboard::SpeedProfileEntry> = waypoints
+            .into_iter()
+            .map(|(position, speed)| crate::storyboard::SpeedProfileEntry { position, speed })
+            .collect();
+
+        let action = Action::SpeedProfile(crate::storyboard::SpeedProfileAction {
+            entries,
+            following_mode,
+        });
+
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+                start_trigger: None,
+            });
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
