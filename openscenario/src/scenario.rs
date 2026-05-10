@@ -1999,6 +1999,182 @@ impl Scenario {
 
         Ok(())
     }
+
+    /// Add an event with a relative distance condition trigger.
+    ///
+    /// Creates an event that triggers when the distance between the specified
+    /// entity and a reference entity meets the rule threshold.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_event_with_relative_distance_condition(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        reference_entity_ref: impl Into<String>,
+        distance_value: f64,
+        rule: Rule,
+        distance_type: crate::storyboard::RelativeDistanceType,
+        freespace: bool,
+    ) -> Result<()> {
+        self.add_event_with_relative_distance_condition_advanced(
+            story,
+            act,
+            mg,
+            maneuver,
+            event,
+            entity_ref,
+            reference_entity_ref,
+            distance_value,
+            rule,
+            distance_type,
+            freespace,
+            ConditionEdge::None,
+            0.0,
+            crate::storyboard::CoordinateSystem::Entity,
+        )
+    }
+
+    /// Add an event with a relative distance condition trigger (advanced).
+    ///
+    /// Creates an event with full control over condition edge, delay, and coordinate system.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_event_with_relative_distance_condition_advanced(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        reference_entity_ref: impl Into<String>,
+        distance_value: f64,
+        rule: Rule,
+        distance_type: crate::storyboard::RelativeDistanceType,
+        freespace: bool,
+        edge: ConditionEdge,
+        delay: f64,
+        coordinate_system: crate::storyboard::CoordinateSystem,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+        let entity_name = entity_ref.into();
+        let reference_name = reference_entity_ref.into();
+
+        // Validate distance value (must be non-negative)
+        if distance_value < 0.0 {
+            return Err(ScenarioError::InvalidValue {
+                field: "distance_value".to_string(),
+                reason: format!("Distance value cannot be negative (got {})", distance_value),
+            });
+        }
+
+        // Validate both entities exist
+        let available: Vec<String> = self.entities.keys().cloned().collect();
+        if !self.entities.contains_key(&entity_name) {
+            return Err(ScenarioError::InvalidEntityRef {
+                entity: entity_name.clone(),
+                available: available.clone(),
+            });
+        }
+        if !self.entities.contains_key(&reference_name) {
+            return Err(ScenarioError::InvalidEntityRef {
+                entity: reference_name.clone(),
+                available,
+            });
+        }
+
+        // Get story
+        let story_keys: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: story_keys,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg = act
+            .maneuver_groups
+            .get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        // Create the relative distance condition
+        let distance_condition = crate::storyboard::RelativeDistanceCondition {
+            entity_ref: reference_name,
+            value: distance_value,
+            rule,
+            distance_type,
+            freespace,
+            coordinate_system: Some(coordinate_system),
+        };
+
+        let entity_condition = EntityCondition::RelativeDistance(distance_condition);
+
+        let triggering_entities = TriggeringEntities {
+            rule: TriggeringEntitiesRule::Any,
+            entity_refs: vec![entity_name],
+        };
+
+        let by_entity_condition = ByEntityCondition {
+            triggering_entities,
+            entity_condition,
+        };
+
+        let condition = Condition {
+            name: format!("{}Condition", event_name),
+            delay,
+            condition_edge: edge,
+            kind: ConditionKind::ByEntity(by_entity_condition),
+        };
+
+        let condition_group = ConditionGroup {
+            conditions: vec![condition],
+        };
+
+        let trigger = Trigger {
+            condition_groups: vec![condition_group],
+        };
+
+        // Create or update event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.start_trigger = Some(trigger);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![],
+                start_trigger: Some(trigger),
+            });
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

@@ -676,6 +676,34 @@ impl Scenario {
                         
                         writer.write_event(XmlEvent::End(BytesEnd::new("CollisionCondition")))?;
                     }
+                    crate::storyboard::EntityCondition::RelativeDistance(dist_cond) => {
+                        let mut dist_elem = BytesStart::new("RelativeDistanceCondition");
+                        dist_elem.push_attribute(("entityRef", dist_cond.entity_ref.as_str()));
+                        dist_elem.push_attribute(("value", dist_cond.value.to_string().as_str()));
+                        dist_elem.push_attribute(("freespace", if dist_cond.freespace { "true" } else { "false" }));
+                        dist_elem.push_attribute(("rule", rule_to_string(&dist_cond.rule)));
+                        
+                        // Map distance type to XML attribute value
+                        let distance_type_str = match dist_cond.distance_type {
+                            crate::storyboard::RelativeDistanceType::Longitudinal => "longitudinal",
+                            crate::storyboard::RelativeDistanceType::Lateral => "lateral",
+                            crate::storyboard::RelativeDistanceType::Euclidean => "euclideanDistance",
+                        };
+                        dist_elem.push_attribute(("relativeDistanceType", distance_type_str));
+                        
+                        // Add coordinate system if specified
+                        if let Some(coord_sys) = &dist_cond.coordinate_system {
+                            let coord_sys_str = match coord_sys {
+                                crate::storyboard::CoordinateSystem::Entity => "entity",
+                                crate::storyboard::CoordinateSystem::Lane => "lane",
+                                crate::storyboard::CoordinateSystem::Road => "road",
+                                crate::storyboard::CoordinateSystem::Trajectory => "trajectory",
+                            };
+                            dist_elem.push_attribute(("coordinateSystem", coord_sys_str));
+                        }
+                        
+                        writer.write_event(XmlEvent::Empty(dist_elem))?;
+                    }
                 }
                 
                 // Close </EntityCondition>

@@ -563,10 +563,54 @@ pub struct CollisionCondition {
     pub target_entity_ref: String,
 }
 
+/// Relative distance type for distance measurement.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RelativeDistanceType {
+    /// Distance along the road/trajectory (s-coordinate)
+    Longitudinal,
+    /// Distance perpendicular to road/trajectory (t-coordinate)
+    Lateral,
+    /// Straight-line distance in 3D space
+    Euclidean,
+}
+
+/// Coordinate system for distance calculation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CoordinateSystem {
+    /// Entity's local coordinate system
+    Entity,
+    /// Lane coordinate system
+    Lane,
+    /// Road coordinate system
+    Road,
+    /// Trajectory coordinate system
+    Trajectory,
+}
+
+/// Relative distance condition checks distance between entities.
+///
+/// Triggers when the distance between the triggering entity and a reference
+/// entity meets the specified rule and value.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RelativeDistanceCondition {
+    /// Reference entity to measure distance to
+    pub entity_ref: String,
+    /// Distance value in meters
+    pub value: f64,
+    /// Comparison rule (lessThan, greaterThan, equalTo)
+    pub rule: Rule,
+    /// Type of distance measurement
+    pub distance_type: RelativeDistanceType,
+    /// If true, distance between bounding boxes; if false, distance between reference points
+    pub freespace: bool,
+    /// Coordinate system for measurement (optional, defaults to entity)
+    pub coordinate_system: Option<CoordinateSystem>,
+}
+
 /// Entity-based condition types.
 ///
 /// Represents different conditions that can be checked against entity state.
-/// Currently supports speed, reach position, time-to-collision, and collision conditions.
+/// Currently supports speed, reach position, time-to-collision, collision, and relative distance conditions.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EntityCondition {
     /// Speed-based condition
@@ -577,6 +621,8 @@ pub enum EntityCondition {
     TimeToCollision(TimeToCollisionCondition),
     /// Collision detection condition
     Collision(CollisionCondition),
+    /// Relative distance condition
+    RelativeDistance(RelativeDistanceCondition),
     // Future: Acceleration, etc.
 }
 
