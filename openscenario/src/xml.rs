@@ -7,6 +7,28 @@ use quick_xml::Writer;
 use std::io::Cursor;
 
 impl Scenario {
+    /// Exports the scenario to OpenSCENARIO XML format.
+    ///
+    /// Generates a complete OpenSCENARIO 1.0 XML document including file header,
+    /// parameter declarations, entities, and storyboard with all acts and events.
+    /// The output is formatted with 2-space indentation.
+    ///
+    /// # Returns
+    /// * `Ok(String)` containing the XML document
+    /// * `Err(ScenarioError)` if XML generation fails
+    ///
+    /// # Examples
+    /// ```
+    /// use openscenario::{Scenario, OpenScenarioVersion};
+    ///
+    /// # fn main() -> Result<(), openscenario::ScenarioError> {
+    /// let scenario = Scenario::new(OpenScenarioVersion::V1_0);
+    /// let xml = scenario.to_xml()?;
+    /// assert!(xml.contains("<OpenSCENARIO"));
+    /// assert!(xml.contains("<FileHeader"));
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn to_xml(&self) -> Result<String> {
         let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
 
@@ -1255,7 +1277,27 @@ impl Scenario {
     }
 }
 
-/// Convert a Rule enum value to its OpenSCENARIO 1.0 XML string representation.
+/// Converts a Rule enum value to its OpenSCENARIO 1.0 XML string representation.
+///
+/// Maps the Rust enum variants to the string values expected in OpenSCENARIO XML.
+///
+/// # Arguments
+/// * `rule` - The comparison rule to convert
+///
+/// # Returns
+/// The XML string representation ("greaterThan", "lessThan", or "equalTo")
+///
+/// # Examples
+/// ```
+/// use openscenario::xml::rule_to_string;
+/// use openscenario::storyboard::Rule;
+///
+/// # fn main() {
+/// assert_eq!(rule_to_string(&Rule::GreaterThan), "greaterThan");
+/// assert_eq!(rule_to_string(&Rule::LessThan), "lessThan");
+/// assert_eq!(rule_to_string(&Rule::EqualTo), "equalTo");
+/// # }
+/// ```
 pub fn rule_to_string(rule: &crate::storyboard::Rule) -> &'static str {
     match rule {
         crate::storyboard::Rule::GreaterThan => "greaterThan",
