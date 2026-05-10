@@ -636,17 +636,28 @@ pub enum DynamicsDimension {
 /// Defines how an entity transitions to a new state.
 ///
 /// Specifies the shape, dimension, and value for state transitions like speed changes.
-/// The value interpretation depends on the dimension.
+/// The value interpretation depends on the dimension:
+/// - **Time**: Duration of the transition (typical: 2-10 seconds)
+/// - **Distance**: Length over which the transition occurs (typical: 10-100 meters)
+/// - **Rate**: Rate of change (typical: acceleration 2-5 m/s², speed change 5-20 km/h/s)
 ///
 /// # Examples
 /// ```
 /// use openscenario::storyboard::{TransitionDynamics, DynamicsShape, DynamicsDimension};
 ///
 /// # fn main() {
+/// // Linear transition over 4 seconds
 /// let dynamics = TransitionDynamics {
 ///     shape: DynamicsShape::Linear,
 ///     dimension: DynamicsDimension::Time,
 ///     value: 4.0,  // 4 seconds
+/// };
+/// 
+/// // Transition over 50 meters
+/// let distance_based = TransitionDynamics {
+///     shape: DynamicsShape::Cubic,
+///     dimension: DynamicsDimension::Distance,
+///     value: 50.0,  // 50 meters
 /// };
 /// # }
 /// ```
@@ -1399,15 +1410,28 @@ impl Condition {
 /// None means the condition triggers whenever true; Rising/Falling/RisingOrFalling
 /// trigger only on state changes.
 ///
+/// # Practical Usage
+/// - **Rising**: Best for "start" events (e.g., "when speed exceeds 50 km/h")
+/// - **Falling**: Best for "end" events (e.g., "when speed drops below 30 km/h")
+/// - **RisingOrFalling**: Detect any change (e.g., "when distance crosses threshold")
+/// - **None**: Continuous condition (e.g., "while distance < 10m, maintain speed")
+///
 /// # Examples
 /// ```
 /// use openscenario::storyboard::ConditionEdge;
 ///
 /// # fn main() {
-/// let no_edge = ConditionEdge::None;              // Trigger while true
-/// let rising = ConditionEdge::Rising;             // Trigger on false→true
-/// let falling = ConditionEdge::Falling;           // Trigger on true→false
-/// let both = ConditionEdge::RisingOrFalling;      // Trigger on any change
+/// // Trigger once when speed first exceeds limit
+/// let rising = ConditionEdge::Rising;             // false→true: start event
+/// 
+/// // Trigger once when speed drops back below limit  
+/// let falling = ConditionEdge::Falling;           // true→false: end event
+/// 
+/// // Trigger on every threshold crossing (both directions)
+/// let both = ConditionEdge::RisingOrFalling;      // any change
+/// 
+/// // Trigger continuously while condition is true
+/// let continuous = ConditionEdge::None;           // no edge detection
 /// # }
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

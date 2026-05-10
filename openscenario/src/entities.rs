@@ -235,6 +235,11 @@ pub struct MiscObject {
 /// The Entity enum provides a unified type for all scenario participants.
 /// Each variant contains the specific entity type with its properties.
 ///
+/// # Choosing the Right Entity Type
+/// - **Vehicle**: Use for motorized vehicles (cars, trucks, buses, motorcycles)
+/// - **Pedestrian**: Use for humans walking, running, or stationary
+/// - **MiscObject**: Use for non-motorized objects (traffic cones, barriers, obstacles, debris)
+///
 /// # Examples
 /// ```
 /// use openscenario::entities::{Entity, Vehicle, VehicleParams, VehicleCategory};

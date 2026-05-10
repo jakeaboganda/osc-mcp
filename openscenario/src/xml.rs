@@ -1279,6 +1279,8 @@ impl Scenario {
 
 /// Converts a Rule enum value to its OpenSCENARIO 1.0 XML string representation.
 ///
+/// This is a utility function primarily used during XML serialization, but exposed
+/// publicly for users who need custom XML generation or debugging.
 /// Maps the Rust enum variants to the string values expected in OpenSCENARIO XML.
 ///
 /// # Arguments

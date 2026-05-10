@@ -1,3 +1,18 @@
+//! Core OpenSCENARIO scenario builder.
+//!
+//! This module provides the main `Scenario` struct and its methods for building
+//! OpenSCENARIO XML files programmatically.
+//!
+//! # Design Note: Method Signatures
+//!
+//! Many methods in this module have numerous parameters (5-10+). This complexity
+//! reflects the OpenSCENARIO standard itself, which requires detailed specification
+//! of scenario elements. The API prioritizes explicitness and type safety over
+//! conciseness, ensuring users provide all required information for valid scenarios.
+//!
+//! For convenience methods with fewer parameters, see the "simple" variants (e.g.,
+//! `add_event_with_ttc_condition` vs `add_event_with_ttc_condition_advanced`).
+
 use crate::entities::{
     Entity, MiscObject, MiscObjectParams, Pedestrian, PedestrianParams, Vehicle, VehicleParams,
 };
@@ -2438,15 +2453,32 @@ impl Scenario {
     /// reaches a target state (e.g., completeState, startTransition, endTransition).
     ///
     /// # Arguments
-    /// * `element_name` - Name of the storyboard element to watch
-    /// * `state` - Target state that triggers stopping
+    /// * `element_type` - Type of storyboard element. Valid types:
+    ///   - `"story"` - A Story element
+    ///   - `"act"` - An Act element
+    ///   - `"maneuver"` - A Maneuver element
+    ///   - `"event"` - An Event element
+    ///   - `"action"` - An Action element
+    /// * `element_ref` - Name of the storyboard element to watch
+    /// * `state` - Target state that triggers stopping. Common states:
+    ///   - `"completeState"` - Element has completed
+    ///   - `"startTransition"` - Element is starting
+    ///   - `"endTransition"` - Element is ending
+    ///   - `"runningState"` - Element is running
+    ///   - `"standbyState"` - Element is on standby
+    /// * `delay` - Delay in seconds after state is reached before stopping
     ///
     /// # Examples
     /// ```
     /// use openscenario::{Scenario, OpenScenarioVersion};
     ///
     /// let mut scenario = Scenario::new(OpenScenarioVersion::V1_2);
-    /// scenario.set_stop_on_element_state("StoryboardElementType::Story", "main_story", "completeState", 0.0);
+    /// 
+    /// // Stop when the main story completes
+    /// scenario.set_stop_on_element_state("story", "main_story", "completeState", 0.0);
+    /// 
+    /// // Stop 2 seconds after an act starts
+    /// scenario.set_stop_on_element_state("act", "act1", "startTransition", 2.0);
     /// ```
     pub fn set_stop_on_element_state(
         &mut self,

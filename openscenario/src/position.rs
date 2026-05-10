@@ -151,17 +151,24 @@ impl Position {
     ///
     /// # Arguments
     /// * `road_id` - OpenDRIVE road identifier
-    /// * `lane_id` - Lane ID (negative for right lanes, positive for left)
-    /// * `s` - Position along the road (meters)
-    /// * `offset` - Lateral offset from lane center (meters)
-    /// * `orientation` - Optional orientation override
+    /// * `lane_id` - Lane ID following OpenDRIVE convention:
+    ///   - **Negative values** (e.g., -1, -2): Right lanes (relative to road direction)
+    ///   - **Positive values** (e.g., 1, 2): Left lanes (relative to road direction)
+    ///   - **Zero (0)**: Center lane (typically not used for vehicle positioning)
+    /// * `s` - Position along the road (meters, from road start)
+    /// * `offset` - Lateral offset from lane center (meters, positive = left)
+    /// * `orientation` - Optional orientation override (if None, follows lane direction)
     ///
     /// # Examples
     /// ```
     /// use openscenario::position::Position;
     ///
     /// # fn main() {
+    /// // Position in right lane (-1) at 50m along road, 0.5m left of lane center
     /// let pos = Position::lane("road1", -1, 50.0, 0.5, None);
+    /// 
+    /// // Position in left lane (+1)
+    /// let pos_left = Position::lane("road1", 1, 100.0, 0.0, None);
     /// # }
     /// ```
     pub fn lane(
