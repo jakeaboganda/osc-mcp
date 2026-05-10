@@ -697,6 +697,104 @@ impl Scenario {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_acceleration_action(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        acceleration: f64,
+        duration: f64,
+        dynamics: Option<crate::storyboard::TransitionDynamics>,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+
+        // Validate duration (must be positive)
+        if duration <= 0.0 {
+            return Err(ScenarioError::InvalidValue {
+                field: "duration".to_string(),
+                reason: format!("duration must be positive (got {})", duration),
+            });
+        }
+
+        // Use provided dynamics or default to linear time-based
+        let final_dynamics = dynamics.unwrap_or(crate::storyboard::TransitionDynamics {
+            shape: crate::storyboard::DynamicsShape::Linear,
+            dimension: crate::storyboard::DynamicsDimension::Time,
+            value: duration,
+        });
+
+        // Validate dynamics value
+        if final_dynamics.value <= 0.0 {
+            return Err(ScenarioError::InvalidValue {
+                field: "dynamics.value".to_string(),
+                reason: format!("dynamics value must be positive (got {})", final_dynamics.value),
+            });
+        }
+
+        // Collect keys FIRST to avoid borrow checker issues
+        let available: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+
+        // Then use ok_or_else with the pre-collected keys
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg =
+            act.maneuver_groups
+                .get_mut(&mg_name)
+                .ok_or_else(|| ScenarioError::EntityNotFound {
+                    entity: mg_name.clone(),
+                    context: format!("ManeuverGroup in act '{}'", act_name),
+                })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        let action = Action::Acceleration(crate::storyboard::AccelerationAction {
+            value: acceleration,
+            dynamics: final_dynamics,
+        });
+
+        // Find or create event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.actions.push(action);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![action],
+                start_trigger: None,
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn add_lane_offset_action(
         &mut self,
         story: impl Into<String>,

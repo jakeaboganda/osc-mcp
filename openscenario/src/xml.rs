@@ -823,6 +823,29 @@ impl Scenario {
                 writer.write_event(XmlEvent::End(BytesEnd::new("SpeedAction")))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
             }
+            Action::Acceleration(accel) => {
+                writer.write_event(XmlEvent::Start(BytesStart::new("LongitudinalAction")))?;
+                writer.write_event(XmlEvent::Start(BytesStart::new("SpeedAction")))?;
+
+                // Write dynamics - FORCE dynamicsDimension="rate" for acceleration
+                let mut dyn_elem = BytesStart::new("SpeedActionDynamics");
+                dyn_elem.push_attribute((
+                    "dynamicsShape",
+                    format!("{:?}", accel.dynamics.shape).to_lowercase().as_str(),
+                ));
+                dyn_elem.push_attribute(("value", accel.value.to_string().as_str()));
+                dyn_elem.push_attribute(("dynamicsDimension", "rate"));  // Always "rate" for acceleration
+                writer.write_event(XmlEvent::Empty(dyn_elem))?;
+
+                // Write empty SpeedActionTarget (acceleration applies without specific speed target)
+                writer.write_event(XmlEvent::Start(BytesStart::new("SpeedActionTarget")))?;
+                // For continuous acceleration, we can use RelativeTargetSpeed with continuous=true
+                // But for simplicity, using empty target (acceleration until stopped or max speed)
+                writer.write_event(XmlEvent::End(BytesEnd::new("SpeedActionTarget")))?;
+
+                writer.write_event(XmlEvent::End(BytesEnd::new("SpeedAction")))?;
+                writer.write_event(XmlEvent::End(BytesEnd::new("LongitudinalAction")))?;
+            }
             Action::LaneChange(lane_change) => {
                 writer.write_event(XmlEvent::Start(BytesStart::new("LateralAction")))?;
                 writer.write_event(XmlEvent::Start(BytesStart::new("LaneChangeAction")))?;

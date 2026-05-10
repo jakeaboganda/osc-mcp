@@ -98,6 +98,7 @@ pub enum Action {
     LaneOffset(LaneOffsetAction),
     Position(PositionAction),
     Distance(DistanceAction),
+    Acceleration(AccelerationAction),
     LongitudinalDistance(LongitudinalDistanceAction),
     FollowTrajectory(FollowTrajectoryAction),
     AssignRoute(AssignRouteAction),
@@ -135,6 +136,12 @@ pub struct DistanceAction {
     pub entity_ref: String,
     pub distance: f64,
     pub freespace: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccelerationAction {
+    pub value: f64,  // acceleration in m/s² (can be negative for deceleration)
+    pub dynamics: TransitionDynamics,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
