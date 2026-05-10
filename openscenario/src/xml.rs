@@ -712,6 +712,11 @@ impl Scenario {
                         headway_elem.push_attribute(("rule", rule_to_string(&headway_cond.rule)));
                         writer.write_event(XmlEvent::Empty(headway_elem))?;
                     }
+                    crate::storyboard::EntityCondition::StandStill(standstill_cond) => {
+                        let mut standstill_elem = BytesStart::new("StandStillCondition");
+                        standstill_elem.push_attribute(("duration", standstill_cond.duration.to_string().as_str()));
+                        writer.write_event(XmlEvent::Empty(standstill_elem))?;
+                    }
                 }
                 
                 // Close </EntityCondition>

@@ -2344,6 +2344,153 @@ impl Scenario {
 
         Ok(())
     }
+
+    /// Add an event with a stand still condition trigger.
+    ///
+    /// Creates an event that triggers when the entity has been stationary
+    /// for at least the specified duration.
+    pub fn add_event_with_standstill_condition(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        duration: f64,
+    ) -> Result<()> {
+        self.add_event_with_standstill_condition_advanced(
+            story,
+            act,
+            mg,
+            maneuver,
+            event,
+            entity_ref,
+            duration,
+            ConditionEdge::None,
+            0.0,
+        )
+    }
+
+    /// Add an event with a stand still condition trigger (advanced).
+    ///
+    /// Creates an event with full control over condition edge and delay.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_event_with_standstill_condition_advanced(
+        &mut self,
+        story: impl Into<String>,
+        act: impl Into<String>,
+        mg: impl Into<String>,
+        maneuver: impl Into<String>,
+        event: impl Into<String>,
+        entity_ref: impl Into<String>,
+        duration: f64,
+        edge: ConditionEdge,
+        delay: f64,
+    ) -> Result<()> {
+        let story_name = story.into();
+        let act_name = act.into();
+        let mg_name = mg.into();
+        let maneuver_name = maneuver.into();
+        let event_name = event.into();
+        let entity_name = entity_ref.into();
+
+        // Validate duration (must be positive)
+        if duration <= 0.0 {
+            return Err(ScenarioError::InvalidValue {
+                field: "duration".to_string(),
+                reason: format!("Duration must be positive (got {})", duration),
+            });
+        }
+
+        // Validate entity exists
+        let available: Vec<String> = self.entities.keys().cloned().collect();
+        if !self.entities.contains_key(&entity_name) {
+            return Err(ScenarioError::InvalidEntityRef {
+                entity: entity_name.clone(),
+                available,
+            });
+        }
+
+        // Get story
+        let story_keys: Vec<String> = self.storyboard.stories.keys().cloned().collect();
+        let story = self
+            .storyboard
+            .stories
+            .get_mut(&story_name)
+            .ok_or_else(|| ScenarioError::StoryNotFound {
+                name: story_name.clone(),
+                available: story_keys,
+            })?;
+
+        let act = story
+            .acts
+            .get_mut(&act_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: act_name.clone(),
+                context: format!("Act in story '{}'", story_name),
+            })?;
+
+        let mg = act
+            .maneuver_groups
+            .get_mut(&mg_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: mg_name.clone(),
+                context: format!("ManeuverGroup in act '{}'", act_name),
+            })?;
+
+        let maneuver = mg
+            .maneuvers
+            .iter_mut()
+            .find(|m| m.name == maneuver_name)
+            .ok_or_else(|| ScenarioError::EntityNotFound {
+                entity: maneuver_name.clone(),
+                context: format!("Maneuver in ManeuverGroup '{}'", mg_name),
+            })?;
+
+        // Create the stand still condition
+        let standstill_condition = crate::storyboard::StandStillCondition { duration };
+
+        let entity_condition = EntityCondition::StandStill(standstill_condition);
+
+        let triggering_entities = TriggeringEntities {
+            rule: TriggeringEntitiesRule::Any,
+            entity_refs: vec![entity_name],
+        };
+
+        let by_entity_condition = ByEntityCondition {
+            triggering_entities,
+            entity_condition,
+        };
+
+        let condition = Condition {
+            name: format!("{}Condition", event_name),
+            delay,
+            condition_edge: edge,
+            kind: ConditionKind::ByEntity(by_entity_condition),
+        };
+
+        let condition_group = ConditionGroup {
+            conditions: vec![condition],
+        };
+
+        let trigger = Trigger {
+            condition_groups: vec![condition_group],
+        };
+
+        // Create or update event
+        if let Some(event) = maneuver.events.iter_mut().find(|e| e.name == event_name) {
+            event.start_trigger = Some(trigger);
+        } else {
+            maneuver.events.push(Event {
+                name: event_name,
+                actions: vec![],
+                start_trigger: Some(trigger),
+            });
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

@@ -623,10 +623,19 @@ pub struct TimeHeadwayCondition {
     pub freespace: bool,
 }
 
+/// Stand still condition checks if entity is stationary.
+///
+/// Triggers when the triggering entity remains stationary (speed ≈ 0)
+/// for at least the specified duration.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StandStillCondition {
+    /// Minimum duration the entity must be stationary (seconds)
+    pub duration: f64,
+}
+
 /// Entity-based condition types.
 ///
 /// Represents different conditions that can be checked against entity state.
-/// Currently supports speed, reach position, time-to-collision, collision, relative distance, and time headway conditions.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EntityCondition {
     /// Speed-based condition
@@ -641,7 +650,9 @@ pub enum EntityCondition {
     RelativeDistance(RelativeDistanceCondition),
     /// Time headway condition
     TimeHeadway(TimeHeadwayCondition),
-    // Future: Acceleration, StandStill, etc.
+    /// Stand still condition
+    StandStill(StandStillCondition),
+    // Future: Acceleration, RelativeSpeed, Offroad, etc.
 }
 
 /// By-entity condition with triggering entities.
