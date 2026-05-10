@@ -288,6 +288,11 @@ fn test_acceleration_action_xml_export() {
     assert!(xml.contains("<SpeedActionDynamics"));
     assert!(xml.contains("dynamicsDimension=\"rate\""));  // Acceleration uses rate dimension
     assert!(xml.contains("value=\"5"));  // acceleration value
+    
+    // Check for valid SpeedActionTarget (must not be empty per spec)
+    assert!(xml.contains("<SpeedActionTarget>"));
+    assert!(xml.contains("<RelativeTargetSpeed"));
+    assert!(xml.contains("continuous=\"true\""));  // Continuous acceleration
 }
 
 #[test]
@@ -425,4 +430,88 @@ fn test_acceleration_action_with_different_dimensions() {
         
         assert!(result.is_ok(), "Failed for dimension: {:?}", dimension);
     }
+}
+
+#[test]
+fn test_acceleration_action_invalid_dynamics_value_fails() {
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_2);
+    
+    let vehicle_params = openscenario::entities::VehicleParams {
+        catalog: None,
+        vehicle_category: openscenario::entities::VehicleCategory::Car,
+        properties: None,
+    };
+    scenario.add_vehicle("ego", vehicle_params).unwrap();
+    scenario.set_initial_position("ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+    
+    scenario.add_story("main_story").unwrap();
+    scenario.add_act("main_story", "act1").unwrap();
+    scenario.add_maneuver_group("main_story", "act1", "mg1").unwrap();
+    scenario.add_actor("main_story", "act1", "mg1", "ego").unwrap();
+    scenario.add_maneuver("main_story", "act1", "mg1", "maneuver1").unwrap();
+    
+    // Custom dynamics with invalid (negative) value
+    let dynamics = TransitionDynamics {
+        shape: DynamicsShape::Linear,
+        dimension: DynamicsDimension::Time,
+        value: -1.0,  // Invalid
+    };
+    
+    let result = scenario.add_acceleration_action(
+        "main_story",
+        "act1",
+        "mg1",
+        "maneuver1",
+        "event1",
+        5.0,
+        3.0,
+        Some(dynamics),
+    );
+    
+    assert!(result.is_err());
+    match result {
+        Err(ScenarioError::InvalidValue { field, .. }) => {
+            assert!(field.contains("dynamics"));
+        }
+        _ => panic!("Expected InvalidValue error for dynamics.value"),
+    }
+}
+
+#[test]
+fn test_acceleration_action_zero_dynamics_value_fails() {
+    let mut scenario = Scenario::new(OpenScenarioVersion::V1_2);
+    
+    let vehicle_params = openscenario::entities::VehicleParams {
+        catalog: None,
+        vehicle_category: openscenario::entities::VehicleCategory::Car,
+        properties: None,
+    };
+    scenario.add_vehicle("ego", vehicle_params).unwrap();
+    scenario.set_initial_position("ego", Position::world(0.0, 0.0, 0.0, 0.0)).unwrap();
+    
+    scenario.add_story("main_story").unwrap();
+    scenario.add_act("main_story", "act1").unwrap();
+    scenario.add_maneuver_group("main_story", "act1", "mg1").unwrap();
+    scenario.add_actor("main_story", "act1", "mg1", "ego").unwrap();
+    scenario.add_maneuver("main_story", "act1", "mg1", "maneuver1").unwrap();
+    
+    // Custom dynamics with zero value
+    let dynamics = TransitionDynamics {
+        shape: DynamicsShape::Linear,
+        dimension: DynamicsDimension::Time,
+        value: 0.0,  // Invalid
+    };
+    
+    let result = scenario.add_acceleration_action(
+        "main_story",
+        "act1",
+        "mg1",
+        "maneuver1",
+        "event1",
+        5.0,
+        3.0,
+        Some(dynamics),
+    );
+    
+    assert!(result.is_err());
 }

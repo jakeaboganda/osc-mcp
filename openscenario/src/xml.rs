@@ -837,10 +837,15 @@ impl Scenario {
                 dyn_elem.push_attribute(("dynamicsDimension", "rate"));  // Always "rate" for acceleration
                 writer.write_event(XmlEvent::Empty(dyn_elem))?;
 
-                // Write empty SpeedActionTarget (acceleration applies without specific speed target)
+                // Write SpeedActionTarget with RelativeTargetSpeed (continuous acceleration)
+                // This expresses: "apply acceleration rate continuously without a specific speed target"
                 writer.write_event(XmlEvent::Start(BytesStart::new("SpeedActionTarget")))?;
-                // For continuous acceleration, we can use RelativeTargetSpeed with continuous=true
-                // But for simplicity, using empty target (acceleration until stopped or max speed)
+                let mut target_elem = BytesStart::new("RelativeTargetSpeed");
+                target_elem.push_attribute(("entityRef", actor));
+                target_elem.push_attribute(("value", "0"));  // Delta of 0 means maintain current speed while accelerating
+                target_elem.push_attribute(("speedTargetValueType", "delta"));
+                target_elem.push_attribute(("continuous", "true"));  // Apply acceleration continuously
+                writer.write_event(XmlEvent::Empty(target_elem))?;
                 writer.write_event(XmlEvent::End(BytesEnd::new("SpeedActionTarget")))?;
 
                 writer.write_event(XmlEvent::End(BytesEnd::new("SpeedAction")))?;
