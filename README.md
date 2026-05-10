@@ -199,6 +199,10 @@ fn main() -> Result<(), openscenario::ScenarioError> {
 }
 ```
 
+💡 **Try it yourself**: `cargo run --example hello_world`
+
+See [openscenario/examples/hello_world.rs](openscenario/examples/hello_world.rs) for the complete runnable example.
+
 ### Lane Change Example (Rust Library)
 
 Create a vehicle that performs a lane change:
@@ -206,7 +210,7 @@ Create a vehicle that performs a lane change:
 ```rust
 use openscenario::{Scenario, OpenScenarioVersion, Position};
 use openscenario::entities::{VehicleParams, VehicleCategory};
-use openscenario::storyboard::{TransitionShape, DynamicsShape, DynamicsDimension};
+use openscenario::storyboard::TransitionShape;
 
 fn main() -> Result<(), openscenario::ScenarioError> {
     let mut scenario = Scenario::new(OpenScenarioVersion::V1_2);
@@ -218,7 +222,7 @@ fn main() -> Result<(), openscenario::ScenarioError> {
         properties: None,
     };
     scenario.add_vehicle("ego", vehicle_params)?;
-    scenario.set_initial_position("ego", Position::lane("road1", -1, 0.0, 0.0, None))?;
+    scenario.set_initial_position("ego", Position::world(0.0, 0.0, 0.0, 0.0))?;
     
     // Create story and maneuver structure
     scenario.add_story("main_story")?;
@@ -227,17 +231,16 @@ fn main() -> Result<(), openscenario::ScenarioError> {
     scenario.add_actor("main_story", "act1", "mg1", "ego")?;
     scenario.add_maneuver("main_story", "act1", "mg1", "lane_change_maneuver")?;
     
-    // Add lane change action (change to lane -2, taking 4 seconds)
+    // Add lane change action: move left by 1 lane
     scenario.add_lane_change_action(
         "main_story",
         "act1", 
         "mg1",
         "lane_change_maneuver",
         "lane_change_event",
-        -2,         // target lane ID
-        4.0,        // transition time
-        DynamicsShape::Sinusoidal,
-        DynamicsDimension::Time,
+        -1.0,                        // target lane offset (relative: -1.0 = one lane left)
+        5.0,                         // transition time (seconds)
+        TransitionShape::Linear,     // transition shape
     )?;
     
     // Export
@@ -248,6 +251,10 @@ fn main() -> Result<(), openscenario::ScenarioError> {
     Ok(())
 }
 ```
+
+💡 **Try it yourself**: `cargo run --example lane_change`
+
+See [openscenario/examples/lane_change.rs](openscenario/examples/lane_change.rs) for the complete runnable example.
 
 ### Adaptive Cruise Control Example (Rust Library)
 
@@ -267,18 +274,18 @@ fn main() -> Result<(), openscenario::ScenarioError> {
         vehicle_category: VehicleCategory::Car,
         properties: None,
     };
-    scenario.add_vehicle("lead", vehicle_params.clone())?;
-    scenario.add_vehicle("follower", vehicle_params)?;
+    scenario.add_vehicle("lead_vehicle", vehicle_params.clone())?;
+    scenario.add_vehicle("follower_vehicle", vehicle_params)?;
     
     // Position vehicles: lead at 50m ahead
-    scenario.set_initial_position("follower", Position::world(0.0, 0.0, 0.0, 0.0))?;
-    scenario.set_initial_position("lead", Position::world(50.0, 0.0, 0.0, 0.0))?;
+    scenario.set_initial_position("follower_vehicle", Position::world(0.0, 0.0, 0.0, 0.0))?;
+    scenario.set_initial_position("lead_vehicle", Position::world(50.0, 0.0, 0.0, 0.0))?;
     
     // Create story structure
     scenario.add_story("main_story")?;
     scenario.add_act("main_story", "act1")?;
     scenario.add_maneuver_group("main_story", "act1", "mg1")?;
-    scenario.add_actor("main_story", "act1", "mg1", "follower")?;
+    scenario.add_actor("main_story", "act1", "mg1", "follower_vehicle")?;
     scenario.add_maneuver("main_story", "act1", "mg1", "acc_maneuver")?;
     
     // Add time headway condition: trigger when following too closely
@@ -288,23 +295,24 @@ fn main() -> Result<(), openscenario::ScenarioError> {
         "mg1",
         "acc_maneuver",
         "too_close_event",
-        "follower",
-        "lead",
-        2.0,           // 2-second time headway threshold
-        Rule::LessThan,
-        true,          // freespace (use bounding boxes)
+        "follower_vehicle",  // Entity being monitored
+        "lead_vehicle",      // Lead vehicle to measure gap to
+        2.0,                 // 2-second time headway threshold
+        Rule::LessThan,      // Trigger when headway < 2.0 seconds
+        true,                // freespace (use bounding boxes)
     )?;
     
     // Add speed profile to slow down when too close
+    // Action is added to the same event to link condition with response
     scenario.add_speed_profile_action(
         "main_story",
         "act1",
         "mg1",
         "acc_maneuver",
-        "too_close_event",
+        "too_close_event",  // Same event name links action with condition
         vec![
-            (0.0, 25.0),  // t=0s: 25 m/s
-            (3.0, 20.0),  // t=3s: slow to 20 m/s
+            (0.0, 30.0),  // t=0s: 30 m/s
+            (3.0, 25.0),  // t=3s: slow to 25 m/s
         ],
         true,  // time-based
     )?;
@@ -317,6 +325,10 @@ fn main() -> Result<(), openscenario::ScenarioError> {
     Ok(())
 }
 ```
+
+💡 **Try it yourself**: `cargo run --example adaptive_cruise_control`
+
+See [openscenario/examples/adaptive_cruise_control.rs](openscenario/examples/adaptive_cruise_control.rs) for the complete runnable example.
 
 ## Documentation
 
