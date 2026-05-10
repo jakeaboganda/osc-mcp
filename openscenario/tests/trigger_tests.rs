@@ -378,11 +378,12 @@ fn test_entity_condition_speed_variant() {
     };
     let entity_cond = EntityCondition::Speed(speed_cond.clone());
     
-    match entity_cond {
-        EntityCondition::Speed(sc) => {
-            assert_eq!(sc.value, 15.5);
-            assert_eq!(sc.rule, Rule::LessThan);
-        }
+    // Use if let to avoid exhaustive match on extensible enum
+    if let EntityCondition::Speed(sc) = entity_cond {
+        assert_eq!(sc.value, 15.5);
+        assert_eq!(sc.rule, Rule::LessThan);
+    } else {
+        panic!("Expected Speed variant");
     }
 }
 
@@ -429,8 +430,11 @@ fn test_condition_kind_by_entity_variant() {
     match kind {
         ConditionKind::ByEntity(be) => {
             assert_eq!(be.triggering_entities.entity_refs[0], "Ego");
-            match be.entity_condition {
-                EntityCondition::Speed(sc) => assert_eq!(sc.value, 40.0),
+            // Use if let to avoid exhaustive match on extensible enum
+            if let EntityCondition::Speed(sc) = be.entity_condition {
+                assert_eq!(sc.value, 40.0);
+            } else {
+                panic!("Expected Speed variant");
             }
         }
         _ => panic!("Expected ByEntity variant"),
