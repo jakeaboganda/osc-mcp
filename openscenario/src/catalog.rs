@@ -135,12 +135,20 @@ impl Catalog {
         if let Some(name) = entry_name {
             let (length, width, height) = dimensions;
             let bounding_box = if length > 0.0 && width > 0.0 && height > 0.0 {
-                Some(BoundingBox { length, width, height })
+                Some(BoundingBox {
+                    length,
+                    width,
+                    height,
+                })
             } else {
                 None
             };
             let entity = Self::create_entity(entry_type, &name, dimensions)?;
-            Ok(Some(CatalogEntry { name, entity, bounding_box }))
+            Ok(Some(CatalogEntry {
+                name,
+                entity,
+                bounding_box,
+            }))
         } else {
             Ok(None)
         }

@@ -242,7 +242,10 @@ fn set_entity_dimensions_overrides_default() {
         height: default.height,
     };
     s.set_entity_dimensions("ego", custom.clone()).unwrap();
-    assert_eq!(s.effective_bounding_box("ego").unwrap().length, custom.length);
+    assert_eq!(
+        s.effective_bounding_box("ego").unwrap().length,
+        custom.length
+    );
 }
 
 #[test]

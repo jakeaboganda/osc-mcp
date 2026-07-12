@@ -30,7 +30,6 @@ pub struct BoundingBox {
     pub height: f64,
 }
 
-
 /// OpenSCENARIO vehicle category classification.
 ///
 /// Defines the type of vehicle entity according to the OpenSCENARIO standard.

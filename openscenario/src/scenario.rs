@@ -586,12 +586,26 @@ impl Scenario {
                 if other_name == &entity {
                     continue;
                 }
-                if let Position::World { x: ox, y: oy, h: oh, .. } = other_pos {
+                if let Position::World {
+                    x: ox,
+                    y: oy,
+                    h: oh,
+                    ..
+                } = other_pos
+                {
                     let bb_a = self.effective_bounding_box(&entity).unwrap();
                     let bb_b = self.effective_bounding_box(other_name).unwrap();
                     if obbs_overlap_2d(
-                        *x, *y, *h, bb_a.length / 2.0, bb_a.width / 2.0,
-                        *ox, *oy, *oh, bb_b.length / 2.0, bb_b.width / 2.0,
+                        *x,
+                        *y,
+                        *h,
+                        bb_a.length / 2.0,
+                        bb_a.width / 2.0,
+                        *ox,
+                        *oy,
+                        *oh,
+                        bb_b.length / 2.0,
+                        bb_b.width / 2.0,
                     ) {
                         return Err(ScenarioError::SpawnCollision {
                             entity_a: entity.clone(),
@@ -4644,15 +4658,27 @@ fn project_onto_axis(corners: &[(f64, f64); 4], nx: f64, ny: f64) -> (f64, f64) 
     let mut max = f64::NEG_INFINITY;
     for (x, y) in corners {
         let p = x * nx + y * ny;
-        if p < min { min = p; }
-        if p > max { max = p; }
+        if p < min {
+            min = p;
+        }
+        if p > max {
+            max = p;
+        }
     }
     (min, max)
 }
 
 fn obbs_overlap_2d(
-    ax: f64, ay: f64, ha: f64, hl_a: f64, hw_a: f64,
-    bx: f64, by: f64, hb: f64, hl_b: f64, hw_b: f64,
+    ax: f64,
+    ay: f64,
+    ha: f64,
+    hl_a: f64,
+    hw_a: f64,
+    bx: f64,
+    by: f64,
+    hb: f64,
+    hl_b: f64,
+    hw_b: f64,
 ) -> bool {
     let corners_a = obb_corners_2d(ax, ay, ha, hl_a, hw_a);
     let corners_b = obb_corners_2d(bx, by, hb, hl_b, hw_b);

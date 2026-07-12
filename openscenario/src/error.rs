@@ -105,10 +105,7 @@ pub enum ScenarioError {
     ///
     /// Only checked for `World` positions. `Lane` and `Road` positions are not yet checked.
     #[error("Entities '{entity_a}' and '{entity_b}' have overlapping bounding boxes at spawn")]
-    SpawnCollision {
-        entity_a: String,
-        entity_b: String,
-    },
+    SpawnCollision { entity_a: String, entity_b: String },
 
     /// Raised when attempting to add a parameter with a name that already exists.
     ///
