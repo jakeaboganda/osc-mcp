@@ -25,9 +25,10 @@ pub fn handle_create_scenario(
         "1.0" => OpenScenarioVersion::V1_0,
         "1.1" => OpenScenarioVersion::V1_1,
         "1.2" => OpenScenarioVersion::V1_2,
+        "1.3" => OpenScenarioVersion::V1_3,
         _ => {
             return Err(anyhow!(
-                "Invalid version: {}. Must be 1.0, 1.1, or 1.2",
+                "Invalid version: {}. Must be 1.0, 1.1, 1.2, or 1.3",
                 version
             ))
         }

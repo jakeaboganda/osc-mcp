@@ -5,6 +5,7 @@ pub enum OpenScenarioVersion {
     V1_0,
     V1_1,
     V1_2,
+    V1_3,
 }
 
 impl OpenScenarioVersion {
@@ -14,6 +15,7 @@ impl OpenScenarioVersion {
             (1, 0) => Some(Self::V1_0),
             (1, 1) => Some(Self::V1_1),
             (1, 2) => Some(Self::V1_2),
+            (1, 3) => Some(Self::V1_3),
             _ => None,
         }
     }
@@ -27,6 +29,7 @@ impl OpenScenarioVersion {
             Self::V1_0 => 0,
             Self::V1_1 => 1,
             Self::V1_2 => 2,
+            Self::V1_3 => 3,
         }
     }
 }

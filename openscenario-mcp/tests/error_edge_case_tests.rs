@@ -209,7 +209,7 @@ fn test_invalid_version_string() {
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert!(err.to_string().contains("Invalid version"));
-    assert!(err.to_string().contains("1.0, 1.1, or 1.2"));
+    assert!(err.to_string().contains("1.0, 1.1, 1.2, or 1.3"));
 }
 
 #[test]

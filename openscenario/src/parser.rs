@@ -182,17 +182,11 @@ fn parse_file_header_empty(e: &BytesStart) -> Result<OpenScenarioVersion> {
         ScenarioError::Parse("Missing revMinor attribute in FileHeader".to_string())
     })?;
 
-    if major != 1 {
-        return Err(ScenarioError::Parse(format!(
-            "Unsupported OpenSCENARIO version {}.{}. Only version 1.x is supported.",
+    OpenScenarioVersion::from_rev(major, minor).ok_or_else(|| {
+        ScenarioError::Parse(format!(
+            "Unsupported OpenSCENARIO version {}.{}. Supported versions: 1.0, 1.1, 1.2, 1.3.",
             major, minor
-        )));
-    }
-
-    Ok(match minor {
-        0 => OpenScenarioVersion::V1_0,
-        1 => OpenScenarioVersion::V1_1,
-        _ => OpenScenarioVersion::V1_2,
+        ))
     })
 }
 

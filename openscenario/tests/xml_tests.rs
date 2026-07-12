@@ -359,3 +359,21 @@ fn test_event_default_start_trigger_xml() {
     assert!(xml.contains("EventStartCondition"));
     assert!(xml.contains("<SimulationTimeCondition"));
 }
+
+#[test]
+fn test_xml_export_v1_3_header() {
+    let scenario = Scenario::new(OpenScenarioVersion::V1_3);
+    let xml = scenario.to_xml().expect("XML generation failed");
+
+    assert!(xml.contains("revMajor=\"1\""));
+    assert!(xml.contains("revMinor=\"3\""));
+}
+
+#[test]
+fn test_xml_roundtrip_v1_3_version() {
+    let scenario = Scenario::new(OpenScenarioVersion::V1_3);
+    let xml = scenario.to_xml().expect("XML generation failed");
+
+    let parsed = Scenario::from_xml(&xml).expect("parse failed");
+    assert_eq!(parsed.version(), OpenScenarioVersion::V1_3);
+}

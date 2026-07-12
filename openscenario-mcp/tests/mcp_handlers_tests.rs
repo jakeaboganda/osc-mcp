@@ -78,6 +78,32 @@ fn test_create_scenario_handler() {
 }
 
 #[test]
+fn test_create_scenario_handler_v1_3() {
+    let state = setup_state();
+
+    let scenario_id = handle_create_scenario(
+        state.clone(),
+        "test_scenario_v13".to_string(),
+        "1.3".to_string(),
+    )
+    .unwrap();
+
+    let state_lock = state.lock().unwrap();
+    let scenario = state_lock.scenarios.get(&scenario_id).unwrap();
+    assert_eq!(scenario.version().to_string(), "1.3");
+}
+
+#[test]
+fn test_create_scenario_handler_rejects_unknown_version() {
+    let state = setup_state();
+
+    let result = handle_create_scenario(state.clone(), "bad".to_string(), "1.4".to_string());
+
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("Invalid version"));
+}
+
+#[test]
 fn test_add_vehicle_handler() {
     let state = setup_state();
 
