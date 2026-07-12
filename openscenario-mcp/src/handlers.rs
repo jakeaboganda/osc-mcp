@@ -1296,73 +1296,94 @@ fn format_condition_description(condition: &openscenario::storyboard::Condition)
 pub fn handle_validate_scenario_structure(
     state: Arc<Mutex<ServerState>>,
     scenario_id: String,
-    auto_fix: bool,
+    _auto_fix: bool,
 ) -> Result<String> {
-    let mut state_lock = state
+    // No current structural check has a safe automatic fix (each one needs domain
+    // knowledge -- what Act to add, which entity should be an actor, where to place
+    // an entity -- that can't be guessed without risking a wrong answer, e.g. an
+    // arbitrary spawn position colliding with another entity). auto_fix is kept as
+    // a parameter for API stability but is currently a no-op.
+    let state_lock = state
         .lock()
         .map_err(|_| anyhow!("Failed to acquire state lock: mutex poisoned"))?;
 
     let scenario = state_lock
         .scenarios
-        .get_mut(&scenario_id)
+        .get(&scenario_id)
         .ok_or_else(|| anyhow!("Scenario '{}' not found", scenario_id))?;
 
     let mut warnings: Vec<String> = Vec::new();
-    let errors: Vec<String> = Vec::new();
-    let mut fixes_applied: Vec<String> = Vec::new();
+    let mut errors: Vec<String> = Vec::new();
 
-    // Collect Acts without triggers first (to avoid borrow checker issues)
-    let mut acts_to_fix: Vec<(String, String)> = Vec::new();
+    // Structural cardinality gaps: the XSD requires at least one Act per Story, one
+    // ManeuverGroup per Act, and one Event per Maneuver (none has minOccurs="0").
+    // A scenario with any of these would fail real XSD validation, so these are
+    // errors, not warnings. None of them has a safe auto-fix (there's no sensible
+    // default Act/ManeuverGroup/Event to invent), so auto_fix doesn't apply here.
     for story in scenario.stories() {
+        if story.acts.is_empty() {
+            errors.push(format!(
+                "Story '{}' has no Acts (the XSD requires at least one; export will fail validation)",
+                story.name
+            ));
+            continue;
+        }
         for (act_name, act) in &story.acts {
-            if act.start_trigger.is_none() {
-                let msg = format!(
-                    "Act '{}' in story '{}' has no start trigger (will never execute)",
+            if act.maneuver_groups.is_empty() {
+                errors.push(format!(
+                    "Act '{}' in story '{}' has no ManeuverGroups (the XSD requires at least one)",
                     act_name, story.name
-                );
-
-                if auto_fix {
-                    acts_to_fix.push((story.name.clone(), act_name.clone()));
-                } else {
-                    warnings.push(msg);
+                ));
+                continue;
+            }
+            for (mg_name, mg) in &act.maneuver_groups {
+                if mg.actors.is_empty() {
+                    warnings.push(format!(
+                        "ManeuverGroup '{}' in act '{}' has no actors (its maneuvers will never act on anyone)",
+                        mg_name, act_name
+                    ));
+                }
+                for maneuver in &mg.maneuvers {
+                    if maneuver.events.is_empty() {
+                        errors.push(format!(
+                            "Maneuver '{}' in group '{}' has no Events (the XSD requires at least one)",
+                            maneuver.name, mg_name
+                        ));
+                    }
                 }
             }
         }
     }
 
-    // Apply fixes
-    for (story_name, act_name) in acts_to_fix {
-        use openscenario::storyboard::{Condition, ConditionEdge, ConditionGroup, Rule, Trigger};
-
-        let mut condition = Condition::simulation_time(0.0, Rule::GreaterThan);
-        condition.condition_edge = ConditionEdge::Rising;
-        condition.name = format!("AutoFix_{}_Start", act_name);
-
-        let condition_group = ConditionGroup::new(vec![condition]);
-        let trigger = Trigger::new(condition_group);
-
-        scenario
-            .set_act_start_trigger(&story_name, &act_name, trigger)
-            .map_err(|e| anyhow!("Failed to auto-fix trigger: {}", e))?;
-
-        fixes_applied.push(format!(
-            "✅ Auto-fixed: Added t=0 trigger to Act '{}'",
-            act_name
-        ));
+    // An entity with neither an initial position nor an initial speed is silently
+    // omitted from <Init><Actions> by the XML writer (see write_init in xml.rs) --
+    // it's declared in <Entities> but never placed in the simulation. There's no
+    // safe default location to auto-fix this with (an arbitrary position could
+    // itself collide with another entity's spawn point), so this stays a warning.
+    for entity in scenario.entities() {
+        let name = entity.name();
+        if scenario.get_initial_position(name).is_none()
+            && scenario.get_initial_speed(name).is_none()
+        {
+            warnings.push(format!(
+                "Entity '{}' has no initial position or speed (it won't be placed in the simulation)",
+                name
+            ));
+        }
     }
 
     // Build report
     let mut report = String::new();
 
-    if errors.is_empty() && warnings.is_empty() && fixes_applied.is_empty() {
+    if errors.is_empty() && warnings.is_empty() {
         report.push_str("✅ Scenario validation passed: No issues found\n");
     } else {
         report.push_str("📋 Scenario Validation Report\n\n");
 
-        if !fixes_applied.is_empty() {
-            report.push_str(&format!("🔧 Fixes Applied ({}):\n", fixes_applied.len()));
-            for fix in &fixes_applied {
-                report.push_str(&format!("  {}\n", fix));
+        if !errors.is_empty() {
+            report.push_str(&format!("❌ Errors ({}):\n", errors.len()));
+            for error in &errors {
+                report.push_str(&format!("  • {}\n", error));
             }
             report.push('\n');
         }
@@ -1373,18 +1394,6 @@ pub fn handle_validate_scenario_structure(
                 report.push_str(&format!("  • {}\n", warning));
             }
             report.push('\n');
-        }
-
-        if !errors.is_empty() {
-            report.push_str(&format!("❌ Errors ({}):\n", errors.len()));
-            for error in &errors {
-                report.push_str(&format!("  • {}\n", error));
-            }
-            report.push('\n');
-        }
-
-        if !warnings.is_empty() && !auto_fix {
-            report.push_str("\n💡 Tip: Run with auto_fix=true to automatically fix warnings\n");
         }
     }
 

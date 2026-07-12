@@ -295,7 +295,7 @@ impl OpenScenarioServer {
             ToolDefinition {
                 name: "validate_scenario_structure".to_string(),
                 description: Some(
-                    "Validate scenario structure for common issues (dead Acts, missing triggers, etc.). Can auto-fix issues when auto_fix=true.".to_string(),
+                    "Validate scenario structure for issues XSD validation alone won't catch as clearly: Stories/Acts/Maneuvers missing required child elements, ManeuverGroups with no actors, and entities with no initial position or speed (silently excluded from the simulation).".to_string(),
                 ),
                 input_schema: json!({
                     "type": "object",
@@ -306,7 +306,7 @@ impl OpenScenarioServer {
                         },
                         "auto_fix": {
                             "type": "boolean",
-                            "description": "If true, automatically fix common issues (e.g., add t=0 triggers to Acts without triggers)"
+                            "description": "Reserved for future checks that have a safe automatic fix. No current check does (each needs domain knowledge, e.g. which entity should be an actor); has no effect today."
                         }
                     },
                     "required": ["scenario_id"]
