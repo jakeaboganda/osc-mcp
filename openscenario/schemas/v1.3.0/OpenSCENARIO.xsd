@@ -1540,10 +1540,26 @@ See www.asam.net/license.html for further details.
 	<xsd:complexType name="OffroadCondition">
 		<xsd:attribute name="duration" type="Double" use="required"/>
 	</xsd:complexType>
+	<!--
+	osc-mcp patch: inlined the OpenScenarioCategory choice directly here instead of
+	referencing it via <xsd:group ref="OpenScenarioCategory"/>. The uppsala 0.4.0/0.9.0
+	XSD validator (github.com/uppsala-rs/uppsala, or crates.io/crates/uppsala) fails to
+	resolve an <xsd:choice> whose alternatives are themselves <xsd:group ref> particles
+	when that choice is reached through an intermediate group reference (double
+	indirection); every element in the chosen branch is reported "unexpected", which
+	breaks validation for every OpenSCENARIO document, scenario or catalog alike. See
+	openscenario/schemas/README.md and openscenario/src/validation.rs for details.
+	OpenScenarioCategory is kept below, unreferenced, so a diff against the official
+	ASAM download stays minimal.
+	-->
 	<xsd:complexType name="OpenScenario">
 		<xsd:sequence>
 			<xsd:element name="FileHeader" type="FileHeader"/>
-			<xsd:group ref="OpenScenarioCategory"/>
+			<xsd:choice>
+				<xsd:group ref="ScenarioDefinition"/>
+				<xsd:group ref="CatalogDefinition"/>
+				<xsd:group ref="ParameterValueDistributionDefinition"/>
+			</xsd:choice>
 		</xsd:sequence>
 	</xsd:complexType>
 	<xsd:element name="OpenScenario" type="OpenScenario"/>

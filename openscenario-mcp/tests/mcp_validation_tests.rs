@@ -70,19 +70,17 @@ fn test_validate_scenario_handler() {
     assert!(result.is_ok());
     let report = result.unwrap();
 
-    // Should contain validation report with valid field
+    // v1.2.0's real ASAM schema is checked into openscenario/schemas/, so this must
+    // exercise actual XSD validation, not fall back to the "schema not available" path.
+    assert!(
+        !report.contains("XSD schema not available"),
+        "v1.2.0 schema should be loaded: {report}"
+    );
     assert!(report.contains("valid"));
-    // Strict mode: without XSD files, validation fails
-    // This is expected behavior in 0.2.0+
-    if report.contains("XSD schema not available") {
-        assert!(
-            report.contains("false"),
-            "Should fail without XSD (strict mode)"
-        );
-    } else {
-        // With XSD files, validation should pass
-        assert!(report.contains("true"), "Should pass with XSD files");
-    }
+    assert!(
+        report.contains("true"),
+        "bare scenario should pass real XSD validation: {report}"
+    );
 }
 
 #[test]

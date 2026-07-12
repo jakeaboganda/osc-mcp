@@ -20,12 +20,25 @@ pub struct XsdValidator {
     version: String,
 }
 
-// Schema paths for each version
-fn schema_path_for_version(version: &str) -> PathBuf {
+// Maps a "revMajor.revMinor" version string to the directory holding its official
+// ASAM schema. The directories aren't named "v{version}" uniformly: only bare-bones
+// stub schemas ever existed at v1.0/v1.1/v1.2, while the real, full schemas were
+// added later under their ASAM release names (v1.1.1, v1.2.0, v1.3.1). "v1.0" has no
+// OpenSCENARIO.xsd in it (see schemas/README.md) and is kept pointed at that empty
+// stub dir on purpose: validate() reports "schema not available" for it rather than
+// "unsupported version", since 1.0 remains a recognized (if unvalidatable) version.
+const SUPPORTED_SCHEMA_DIRS: &[(&str, &str)] = &[
+    ("1.0", "v1.0"),
+    ("1.1", "v1.1.1"),
+    ("1.2", "v1.2.0"),
+    ("1.3", "v1.3.1"),
+];
+
+fn schema_path_for_version(schema_dir: &str) -> PathBuf {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     PathBuf::from(manifest_dir)
         .join("schemas")
-        .join(format!("v{}", version))
+        .join(schema_dir)
         .join("OpenSCENARIO.xsd")
 }
 
@@ -36,8 +49,8 @@ fn get_schema_validators() -> &'static HashMap<String, Option<UppsalaValidator>>
     SCHEMA_VALIDATORS.get_or_init(|| {
         let mut map = HashMap::new();
 
-        for version in &["1.0", "1.1", "1.2"] {
-            let schema_path = schema_path_for_version(version);
+        for (version, schema_dir) in SUPPORTED_SCHEMA_DIRS {
+            let schema_path = schema_path_for_version(schema_dir);
 
             if !schema_path.exists() {
                 eprintln!(
@@ -175,7 +188,7 @@ impl XsdValidator {
             None => {
                 errors.push(format!(
                     "Unsupported OpenSCENARIO version: {}. \
-                    Supported versions: 1.0, 1.1, 1.2",
+                    Supported versions: 1.0, 1.1, 1.2, 1.3",
                     self.version
                 ));
                 ValidationReport {

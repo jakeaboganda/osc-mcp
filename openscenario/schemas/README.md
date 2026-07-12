@@ -101,6 +101,79 @@ These schemas are the **official ASAM OpenSCENARIO XML schemas**:
 
 ---
 
+## Local Patch: OpenScenarioCategory Inlined
+
+`OpenSCENARIO.xsd` in `v1.1.1/`, `v1.2.0/`, `v1.3.0/`, and `v1.3.1/` each carry one
+deliberate deviation from the official ASAM download, applied identically to all four
+files at the `OpenScenario` complexType:
+
+```xml
+<!-- Official ASAM schema -->
+<xsd:complexType name="OpenScenario">
+    <xsd:sequence>
+        <xsd:element name="FileHeader" type="FileHeader"/>
+        <xsd:group ref="OpenScenarioCategory"/>
+    </xsd:sequence>
+</xsd:complexType>
+<xsd:group name="OpenScenarioCategory">
+    <xsd:choice>
+        <xsd:group ref="ScenarioDefinition"/>
+        <xsd:group ref="CatalogDefinition"/>
+        <xsd:group ref="ParameterValueDistributionDefinition"/>
+    </xsd:choice>
+</xsd:group>
+```
+
+```xml
+<!-- Patched: choice inlined directly into OpenScenario's sequence -->
+<xsd:complexType name="OpenScenario">
+    <xsd:sequence>
+        <xsd:element name="FileHeader" type="FileHeader"/>
+        <xsd:choice>
+            <xsd:group ref="ScenarioDefinition"/>
+            <xsd:group ref="CatalogDefinition"/>
+            <xsd:group ref="ParameterValueDistributionDefinition"/>
+        </xsd:choice>
+    </xsd:sequence>
+</xsd:complexType>
+<!-- OpenScenarioCategory is left in place, unreferenced, to keep the diff minimal -->
+```
+
+**Why**: the `uppsala` crate (pinned to 0.4.0 in `openscenario/Cargo.toml`; confirmed
+still present in 0.9.0, the latest release on crates.io as of this writing) fails to
+resolve an `<xsd:choice>` when its alternatives are `<xsd:group ref>` particles reached
+through *another* intermediate `<xsd:group ref>` (double indirection). Every child of
+whichever branch should have matched gets reported as `"Unexpected element '...' in
+sequence"`. This is the exact shape of the real schema's root: `OpenScenario` ->
+`group ref="OpenScenarioCategory"` -> `choice` of three `group ref`s. The bug is
+independent of scenario content — it broke every single OpenSCENARIO document,
+scenario or catalog, at the root element, before this patch. It reproduces in a
+20-line schema with no ASAM content at all; see the git history of this file / the
+`osc-mcp` project's development notes for the isolated repro. Inlining the choice one
+level up (so the choice's alternatives are reached with only one `<xsd:group ref>`
+hop, not two) works around it without touching the validator crate.
+
+**Consequence**: these four `OpenSCENARIO.xsd` files are *not* byte-identical to the
+official ASAM download. If you ever re-sync a schema from ASAM (e.g. to pick up a new
+patch release), re-apply this same edit, or `validate_scenario` will silently regress
+to reporting every valid scenario document as invalid. Check with:
+```bash
+grep -A2 'group ref="OpenScenarioCategory"' schemas/v*/OpenSCENARIO.xsd
+```
+If this prints the *unpatched* form (`OpenScenario`'s sequence containing only
+`FileHeader` + `group ref="OpenScenarioCategory"`, no inline `<xsd:choice>`), the patch
+needs to be re-applied.
+
+Separately, `openscenario/src/validation.rs`'s `SUPPORTED_SCHEMA_DIRS` maps
+`"1.0"/"1.1"/"1.2"/"1.3"` version strings to these directories; that mapping — not the
+directory names themselves — is what previously pointed at empty stub directories
+(`v1.0/`, `v1.1/`, `v1.2/`, none of which contain `OpenSCENARIO.xsd`) instead of the
+real ones added here, silently making `validate_scenario` always report "schema not
+available" regardless of scenario content. Both bugs had to be fixed together for
+validation to actually run.
+
+---
+
 ## Version Differences
 
 ### v1.1.1 → v1.2.0

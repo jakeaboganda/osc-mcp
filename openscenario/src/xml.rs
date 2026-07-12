@@ -910,7 +910,9 @@ impl Scenario {
         writer.write_event(XmlEvent::Start(elem))?;
 
         // Actors
-        writer.write_event(XmlEvent::Start(BytesStart::new("Actors")))?;
+        let mut actors_elem = BytesStart::new("Actors");
+        actors_elem.push_attribute(("selectTriggeringEntities", "false"));
+        writer.write_event(XmlEvent::Start(actors_elem))?;
         for actor in &mg.actors {
             let mut ref_elem = BytesStart::new("EntityRef");
             ref_elem.push_attribute(("entityRef", actor.as_str()));
